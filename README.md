@@ -85,6 +85,8 @@ Connect the repository in Cloudflare Pages and set:
 - Build command: `npm run build`
 - Build output directory: `dist`
 
+If Cloudflare offers a Workers project instead of Pages, use build command `npm run build` and deploy command `npx wrangler deploy`. `wrangler.jsonc` tells Wrangler to publish `dist/` as static files under the name `selenes-compass`, which must match the project name in the dashboard.
+
 The Node version comes from `.node-version` (22). `public/_headers` sets basic security headers and long caching for the hashed files in `assets/`. The site is fully static, so the free plan is enough.
 
 Nothing a visitor does is stored on the server. Saved sites, Compare filters and open sections live in each visitor's own browser storage, so every visitor has their own and no one sees anyone else's.
