@@ -546,8 +546,8 @@ export const aboutHtml = `
       <p>The rows of the year plot are numbered by mean lunar day, and each line plots the height of the disc’s top edge above the skyline.</p>
       <div class="eq">${EQ2.day}</div>
       <dl class="where">
-        <dt>${inline(mi('P'))}</dt><dd>29.530588853 days, the mean time from one new moon to the next</dd>
-        <dt>${inline(sub(mi('t'), mi('ref')))}</dt><dd>6 January 2000, 18:14 UTC, a new moon. It only sets where each row starts.</dd>
+        <dt>${inline(mi('P'))}</dt><dd>29.530588 days, the mean time from one new moon to the next, as calculated for the year 2000 ${ref('s-10')}</dd>
+        <dt>${inline(sub(mi('t'), mi('ref')))}</dt><dd>6 January 2000, 18:14 UT, a new moon ${ref('s-10')}. It only sets where each row starts.</dd>
         <dt>${inline(mi('h'))}</dt><dd>Height of the top edge above the skyline. It is negative while the body is hidden, and the plot draws it flat there.</dd>
       </dl>
       <p>The countdowns walk forward in 30-minute steps until any part of the disc appears or the last of it goes. They then halve the last step again and again until the moment is known to within a minute. They look up to 60 days ahead.</p>
@@ -571,7 +571,7 @@ export const aboutHtml = `
         <dt>${inline(sub(mi('R'), mi('Earth')))}</dt><dd>6378.137 km, Earth’s equatorial radius, as JPL Horizons records it ${ref('s-4')}</dd>
         <dt>${inline(mi('a'))}</dt><dd>149 597 870.7 km ${ref('s-5')}</dd>
         <dt>${inline(mi('S'))}</dt><dd>1361 W/m² ${ref('s-5')}</dd>
-        <dt>${inline(mi('P'), mo(','), sub(mi('t'), mi('ref')))}</dt><dd>Standard values for the mean lunar month and a known new moon. They are not taken from the sources listed below, and they only number the rows of the year plot.</dd>
+        <dt>${inline(mi('P'), mo(','), sub(mi('t'), mi('ref')))}</dt><dd>29.530588 days and 6 January 2000, 18:14 UT ${ref('s-10')}. They only number the rows of the year plot.</dd>
       </dl>
     </section>
 
@@ -606,7 +606,7 @@ export const aboutHtml = `
 
       <h3>Sense checks</h3>
       <ul class="plain">
-        <li>The floor of Shackleton crater comes out with no Sun and no Earth for the whole of 2027, as a permanently shadowed crater should.</li>
+        <li>The floor of Shackleton crater comes out with no Sun and no Earth for the whole of 2027, as a permanently shadowed crater should ${ref('s-15')}.</li>
         <li>The way Earth is turned in the sky view is checked by standing on Earth at the point the code says is under the Moon and confirming the Moon is overhead there, within 1°, on four dates.</li>
       </ul>
     </section>
@@ -657,7 +657,7 @@ export const aboutHtml = `
       <h3>2. The terrain model itself</h3>
       <ol class="cons">
         <li>
-          <p><b>A model, not the ground.</b> The heights come from NASA’s LOLA elevation grid ${ref('s-1')}. Like any elevation map it has errors of its own, and this tool cannot see or correct them. No source read for this page states its accuracy, so none is quoted here.</p>
+          <p><b>A model, not the ground.</b> The heights come from NASA’s LOLA elevation grid ${ref('s-1')}. Like any elevation map it has errors of its own, and this tool cannot see or correct them. Gläser et al. ${ref('s-7')} give the LOLA instrument’s “nominal ranging precision” as 10 cm and its “vertical accuracy” as under 1 m, citing Smith et al. That describes each laser measurement. No source read for this page states the accuracy of the gridded map between measurements, so none is quoted for it.</p>
           <p class="effect"><span class="tag">Effect</span> Unknown in size and direction. Any error in the hills that form the skyline moves the skyline with it.</p>
         </li>
         <li>
@@ -691,7 +691,7 @@ export const aboutHtml = `
           <p><b>Ideal discs and a straight skyline.</b> The Sun and Earth are perfect spheres, Earth with its equatorial radius, and the skyline is treated as a straight line across the width of one disc. Earth is nearly 2° across, so a jagged ridge can cover more or less of it than that straight line suggests.</p>
         </li>
         <li>
-          <p><b>Eclipses are ignored.</b> During a lunar eclipse Earth passes in front of the Sun as seen from the Moon, and cuts some or all of its light for a few hours. The tool does not model this.</p>
+          <p><b>Eclipses are ignored.</b> During a lunar eclipse Earth passes in front of the Sun as seen from the Moon ${ref('s-17')}, and cuts some or all of its light for a few hours. The tool does not model this.</p>
           <p class="effect"><span class="tag">Effect</span> Eclipse hours are counted as full sunlight, so sunlight and power come out slightly high in any period that contains one.</p>
         </li>
         <li>
@@ -706,7 +706,7 @@ export const aboutHtml = `
           <p class="effect"><span class="tag">Effect</span> At grazing angles, which are common at the pole, the two rules can disagree by an hour or more. A total and a countdown are not directly comparable.</p>
         </li>
         <li>
-          <p><b>Area, not light.</b> The share of the disc in view is a share of its area. The Sun’s edge is dimmer than its centre, and the tool does not model this.</p>
+          <p><b>Area, not light.</b> The share of the disc in view is a share of its area. The Sun’s edge is dimmer than its centre ${ref('s-17')}, and the tool does not model this.</p>
           <p class="effect"><span class="tag">Effect</span> When only a sliver of the Sun shows, its light is overestimated. When only a sliver is hidden, its light is slightly underestimated.</p>
         </li>
         <li>
@@ -722,7 +722,7 @@ export const aboutHtml = `
           <p class="effect"><span class="tag">Effect</span> For a fixed panel, real output is lower, often far lower.</p>
         </li>
         <li>
-          <p><b>Constant sunlight.</b> The nominal 1361 W/m² ${ref('s-5')} is used at all times. The real figure changes by a few percent over the year as the distance to the Sun changes.</p>
+          <p><b>Constant sunlight.</b> The nominal 1361 W/m² ${ref('s-5')} is used at all times. The real figure changes by a few percent over the year as the distance to the Sun changes. Earth, and the Moon with it, ranges from 147.1 to 152.1 million km from the Sun ${ref('s-16')}, and sunlight weakens with the square of distance, so it varies by about 3% either side of the average.</p>
           <p class="effect"><span class="tag">Effect</span> A few percent high or low depending on the time of year.</p>
         </li>
         <li>
@@ -756,10 +756,13 @@ export const aboutHtml = `
       <h3>8. The catalogue and your pins</h3>
       <ol class="cons">
         <li>
-          <p><b>Mission coordinates were not checked against primary sources.</b> Past and planned mission sites use landing coordinates from public reports of each mission. They were not checked against each mission’s own published data for this page. VIPER’s site is an approximate planned location.</p>
+          <p><b>Mission coordinates come from one NASA table.</b> Every past landing uses the coordinates and date in NASA’s NSSDC table of spacecraft on the Moon ${ref('s-12')}, which credits images from the Lunar Reconnaissance Orbiter Camera. Other published values for the same landings, such as each mission team’s own, can differ slightly, and they were not compared here.</p>
         </li>
         <li>
-          <p><b>Crest sites are moved.</b> LLS 01 to LLS 05 sit on the highest grid cell within 2 to 20 km of a published point, so they are not the published points themselves. Each one’s Site details gives the original point.</p>
+          <p><b>VIPER’s site is approximate.</b> NASA chose a landing region near the western edge of Nobile crater, not a single point, so the pin was placed by this tool inside that area ${ref('s-14')}. NASA cancelled VIPER in 2024, then in 2025 chose Blue Origin to deliver it in late 2027, subject to an option it has yet to take up.</p>
+        </li>
+        <li>
+          <p><b>Crest sites are moved.</b> LLS 01 to LLS 05 sit on the highest grid cell within 2 to 20 km of a reference point, so they are not those points themselves. For LLS 01 and LLS 02 the reference point is published ${ref('s-7')} ${ref('s-8')}, and for LLS 04 it is the most-illuminated point of Bussey et al. ${ref('s-20')}. For LLS 03 and LLS 05 it was chosen for this tool, and published points from Bussey et al. and De Rosa et al. ${ref('s-21')} lie within the search. Each one’s Site details gives its reference point and the published points nearby.</p>
         </li>
         <li>
           <p><b>Pins are only as precise as the click.</b> A pin dropped on the globe or map lands where the pointer was, at the scale of the screen. For exact work, type the coordinates. Latitude is positive north, and longitude runs east from 0° to 360°.</p>
@@ -813,7 +816,7 @@ export const aboutHtml = `
         </div></li>
         <li id="s-7"><span class="ref-no">S7</span><div>
           <p class="cite-line">Gläser, P., Oberst, J., Neumann, G. A., Mazarico, E., Speyerer, E. J. and Robinson, M. S. (2018). <b>Illumination conditions at the lunar poles: Implications for future exploration.</b> <i>Planetary and Space Science</i> 162, 170–178. <a href="https://doi.org/10.1016/j.pss.2017.07.006" target="_blank" rel="noopener">doi:10.1016/j.pss.2017.07.006</a></p>
-          <p><span class="tag">Used for</span> The comparison in Fig. 4: Tables 1 and 2, their definitions of average illumination and solar visibility, and the quoted width of the best-lit crests.</p>
+          <p><span class="tag">Used for</span> The comparison in Fig. 4: Tables 1 and 2, their definitions of average illumination and solar visibility, the quoted width of the best-lit crests, and the LOLA instrument’s precision and accuracy quoted under Constraints.</p>
           <p><span class="tag">Checked against</span> The accepted manuscript, read in full from NASA’s Technical Reports Server, record <a href="https://ntrs.nasa.gov/citations/20170007365" target="_blank" rel="noopener">20170007365</a>.</p>
         </div></li>
         <li id="s-8"><span class="ref-no">S8</span><div>
@@ -822,11 +825,96 @@ export const aboutHtml = `
           <p><span class="tag">Checked against</span> <b>Not read directly.</b> Everything here comes from Gläser et al. ${ref('s-7')}.</p>
         </div></li>
         <li id="s-9"><span class="ref-no">S9</span><div>
-          <p class="cite-line"><b>three.js</b>, version 0.187, by the three.js authors, MIT licence, for 3D drawing. <b>Public Sans</b> and <b>Marcellus SC</b> typefaces, SIL Open Font Licence 1.1, packaged by Fontsource 5.3.</p>
+          <p class="cite-line"><b>three.js</b>, version 0.187, by the three.js authors, MIT licence, for 3D drawing. <a href="https://threejs.org/" target="_blank" rel="noopener">threejs.org</a>. <b>Public Sans</b> and <b>Marcellus SC</b> typefaces, SIL Open Font Licence 1.1, packaged by Fontsource 5.3. <a href="https://fontsource.org/fonts/public-sans" target="_blank" rel="noopener">fontsource.org/fonts/public-sans</a>, <a href="https://fontsource.org/fonts/marcellus-sc" target="_blank" rel="noopener">fontsource.org/fonts/marcellus-sc</a></p>
           <p><span class="tag">Checked against</span> The licence fields of the installed packages.</p>
         </div></li>
+        <li id="s-10"><span class="ref-no">S10</span><div>
+          <p class="cite-line">Espenak, F. <b>Phases of the Moon: 1901 to 2000</b>, from the Six Millennium Catalog of Phases of the Moon. AstroPixels. <a href="https://astropixels.com/ephemeris/phasescat/phases1901.html" target="_blank" rel="noopener">astropixels.com/ephemeris/phasescat/phases1901.html</a></p>
+          <p><span class="tag">Used for</span> The mean length of the lunar month, “as calculated for the year 2000 is 29.530588 days”, and the new moon of 6 January 2000 at 18:14 UT. Together they number the rows of the year plot.</p>
+          <p><span class="tag">Checked against</span> The table page, read directly. The same tables are published on NASA’s eclipse website, which could not be reached while this page was written.</p>
+        </div></li>
+        <li id="s-11"><span class="ref-no">S11</span><div>
+          <p class="cite-line"><b>Gazetteer of Planetary Nomenclature</b>, International Astronomical Union Working Group for Planetary System Nomenclature, maintained by the U.S. Geological Survey Astrogeology Science Center. <a href="https://planetarynames.wr.usgs.gov/" target="_blank" rel="noopener">planetarynames.wr.usgs.gov</a></p>
+          <p><span class="tag">Used for</span> The names and positions of the features the catalogue refers to: Shackleton (feature 5450, centre 89.67° S 129.78° E, the position of LLS 08), de Gerlache (1439), Mons Malapert (16338), Mons Mouton (16070), Nobile (4321) and Malapert A (11081).</p>
+          <p><span class="tag">Checked against</span> Each feature’s page, read directly.</p>
+        </div></li>
+        <li id="s-12"><span class="ref-no">S12</span><div>
+          <p class="cite-line"><b>Table of Anthropogenic Impacts and Spacecraft on the Moon</b>, NASA Space Science Data Coordinated Archive (NSSDCA), Goddard Space Flight Center. <a href="https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html" target="_blank" rel="noopener">nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html</a></p>
+          <p><span class="tag">Used for</span> The coordinates and landing dates of every past mission in the catalogue: IM-1, IM-2, Chandrayaan-3, Chang’e 4, Chang’e 6, SLIM, Apollo 11, Blue Ghost 1 and Apollo 17. The table gives its coordinates in the DE421 mean Earth/polar axis frame and credits images from the Lunar Reconnaissance Orbiter Camera for most of them.</p>
+          <p><span class="tag">Checked against</span> The table, read directly.</p>
+        </div></li>
+        <li id="s-13"><span class="ref-no">S13</span><div>
+          <p class="cite-line"><b>Mission reports</b> behind the notes in the catalogue:</p>
+          <ul class="plain">
+            <li>NASA, “NASA’s LRO Images Intuitive Machine’s Odysseus Lander”, 26 February 2024. <a href="https://www.nasa.gov/missions/lro/nasas-lro-images-intuitive-machines-odysseus-lander/" target="_blank" rel="noopener">nasa.gov</a>. IM-1 landed near crater Malapert A.</li>
+            <li>Lunar Reconnaissance Orbiter Camera (LROC), “Intuitive Machines IM-1 On The Moon!”. <a href="https://lroc.im-ldi.com/images/1360" target="_blank" rel="noopener">lroc.im-ldi.com/images/1360</a></li>
+            <li>LROC, “IM-2 Athena Seen Obliquely”. <a href="https://lroc.im-ldi.com/images/1408" target="_blank" rel="noopener">lroc.im-ldi.com/images/1408</a>. The lander’s name, Athena, and its landing on Mons Mouton on 6 March 2025.</li>
+            <li>LROC, “Chandrayaan-3 Landing Site”. <a href="https://lroc.im-ldi.com/images/1314" target="_blank" rel="noopener">lroc.im-ldi.com/images/1314</a></li>
+            <li>Indian Space Research Organisation (ISRO), Chandrayaan-3. <a href="https://new1.isro.gov.in/Chandrayaan3.html" target="_blank" rel="noopener">isro.gov.in</a>. The Vikram lander.</li>
+            <li>ISRO, Chandrayaan-3’s Alpha Particle X-ray Spectrometer measurements at Shiv Shakti Statio. <a href="https://www.isro.gov.in/Ch3_Alpha_Particle_X-ray_Spectrometer.html" target="_blank" rel="noopener">isro.gov.in</a>. The Pragyan rover.</li>
+            <li>China National Space Administration (CNSA), “China’s Chang’e-4 probe makes historic landing on moon’s far side”. <a href="https://www.cnsa.gov.cn/english/n6465652/n6465653/c6805049/content.html" target="_blank" rel="noopener">cnsa.gov.cn</a>. The landing on the far side and the relay satellite Queqiao.</li>
+            <li>LROC, “First Look: Chang’e 6”. <a href="https://lroc.im-ldi.com/images/1374" target="_blank" rel="noopener">lroc.im-ldi.com/images/1374</a>. A sample return spacecraft on the far side.</li>
+            <li>LROC, “JAXA SLIM Landing”. <a href="https://lroc.im-ldi.com/images/1358" target="_blank" rel="noopener">lroc.im-ldi.com/images/1358</a></li>
+            <li>Japan Aerospace Exploration Agency (JAXA), Institute of Space and Astronautical Science, “Smart Lander for Investigating Moon (SLIM)”. <a href="https://www.isas.jaxa.jp/en/missions/spacecraft/past/slim.html" target="_blank" rel="noopener">isas.jaxa.jp</a>. Its aim of pinpoint landing.</li>
+            <li>NASA, Apollo Lunar Surface Journal, “Apollo 11 Mission Overview”. <a href="https://history.nasa.gov/wp-content/uploads/static/history/alsj/a11/a11ov.html" target="_blank" rel="noopener">history.nasa.gov</a>. Tranquility Base.</li>
+            <li>Firefly Aerospace, “Blue Ghost Mission 1”. <a href="https://fireflyspace.com/missions/blue-ghost-mission-1/" target="_blank" rel="noopener">fireflyspace.com</a>. The landing in Mare Crisium on 2 March 2025.</li>
+            <li>NASA Science, “History of Lunar Exploration”. <a href="https://science.nasa.gov/solar-system/moon/history-of-lunar-exploration/" target="_blank" rel="noopener">science.nasa.gov</a>. Apollo 17 in the Taurus-Littrow valley, December 1972.</li>
+          </ul>
+          <p><span class="tag">Checked against</span> Each page, read directly.</p>
+        </div></li>
+        <li id="s-14"><span class="ref-no">S14</span><div>
+          <p class="cite-line"><b>VIPER</b>: NASA, “NASA’s Artemis Rover to Land Near Nobile Region of Moon’s South Pole”, release 21-121, 20 September 2021, <a href="https://www.nasa.gov/news-release/nasas-artemis-rover-to-land-near-nobile-region-of-moons-south-pole/" target="_blank" rel="noopener">nasa.gov</a>. NASA, “NASA Selects Blue Origin to Deliver VIPER Rover to Moon’s South Pole”, 19 September 2025, <a href="https://www.nasa.gov/news-release/nasa-selects-blue-origin-to-deliver-viper-rover-to-moons-south-pole/" target="_blank" rel="noopener">nasa.gov</a>.</p>
+          <p><span class="tag">Used for</span> VIPER’s landing region near the western edge of Nobile crater, which the 2021 release describes as about 93 km² with no coordinates, and the mission’s status: cancelled in 2024, then a delivery by Blue Origin planned for late 2027, subject to an option NASA has yet to take up.</p>
+          <p><span class="tag">Checked against</span> Both releases, read directly.</p>
+        </div></li>
+        <li id="s-15"><span class="ref-no">S15</span><div>
+          <p class="cite-line"><b>ShadowCam First Look</b>, ShadowCam team, 9 January 2023. ShadowCam is a NASA-funded camera on the Korean Pathfinder Lunar Orbiter, Danuri, which the Korea Aerospace Research Institute placed in lunar orbit in December 2022. <a href="https://shadowcam.im-ldi.com/images/1284" target="_blank" rel="noopener">shadowcam.im-ldi.com/images/1284</a></p>
+          <p><span class="tag">Used for</span> That the wall and floor of Shackleton crater are permanently shadowed, which the sense check above and LLS 08 rely on.</p>
+          <p><span class="tag">Checked against</span> The page, read directly.</p>
+        </div></li>
+        <li id="s-16"><span class="ref-no">S16</span><div>
+          <p class="cite-line"><b>Earth Fact Sheet</b>, NASA Space Science Data Coordinated Archive. <a href="https://nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html" target="_blank" rel="noopener">nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html</a></p>
+          <p><span class="tag">Used for</span> Earth’s closest and farthest distances from the Sun, 147.095 and 152.100 million km, behind the Constraints note on how sunlight varies over the year.</p>
+          <p><span class="tag">Checked against</span> The page, read directly.</p>
+        </div></li>
+        <li id="s-17"><span class="ref-no">S17</span><div>
+          <p class="cite-line"><b>Background on the Sun and eclipses</b>: NASA, “Keep Your Eclipse Glasses to See the Sun’s ‘Freckles’”, 6 September 2017, <a href="https://www.nasa.gov/science-research/heliophysics/keep-your-eclipse-glasses-to-see-the-suns-freckles/" target="_blank" rel="noopener">nasa.gov</a>. NASA Science, “Lunar Eclipse As Seen From The Moon (artist concept)”, <a href="https://science.nasa.gov/resource/lunar-eclipse-as-seen-from-the-moon-artist-concept/" target="_blank" rel="noopener">science.nasa.gov</a>. NASA Science, “March 2026 Total Lunar Eclipse: Your Questions Answered”, <a href="https://science.nasa.gov/solar-system/moon/march-2026-total-lunar-eclipse-your-questions-answered/" target="_blank" rel="noopener">science.nasa.gov</a>.</p>
+          <p><span class="tag">Used for</span> The Constraints notes that the Sun’s centre is brighter than its edges, that during a lunar eclipse Earth passes in front of the Sun as seen from the Moon, and that an eclipse lasts a few hours (the partial phases of the March 2026 eclipse ran from 9:50 to 13:17 UTC).</p>
+          <p><span class="tag">Checked against</span> Each page, read directly.</p>
+        </div></li>
+        <li id="s-18"><span class="ref-no">S18</span><div>
+          <p class="cite-line"><b>Tools used to build, test and host the site.</b> None of them changes a figure on screen.</p>
+          <ul class="plain">
+            <li>Vite 7.3 (build), <a href="https://vite.dev" target="_blank" rel="noopener">vite.dev</a>, MIT</li>
+            <li>TypeScript 5.9, <a href="https://www.typescriptlang.org/" target="_blank" rel="noopener">typescriptlang.org</a>, Apache 2.0</li>
+            <li>Vitest 3.2 (unit tests), <a href="https://github.com/vitest-dev/vitest" target="_blank" rel="noopener">github.com/vitest-dev/vitest</a>, MIT</li>
+            <li>Puppeteer 25 (browser tests and screenshots), <a href="https://pptr.dev" target="_blank" rel="noopener">pptr.dev</a>, Apache 2.0, run in Microsoft Edge</li>
+            <li>sharp 0.34 (preparing the NASA images), <a href="https://sharp.pixelplumbing.com" target="_blank" rel="noopener">sharp.pixelplumbing.com</a>, Apache 2.0</li>
+            <li>tsx 4 (running scripts), <a href="https://tsx.hirok.io" target="_blank" rel="noopener">tsx.hirok.io</a>, MIT</li>
+            <li>Node.js, <a href="https://nodejs.org" target="_blank" rel="noopener">nodejs.org</a></li>
+            <li>Type definitions for three.js and Node.js from DefinitelyTyped, <a href="https://github.com/DefinitelyTyped/DefinitelyTyped" target="_blank" rel="noopener">github.com/DefinitelyTyped/DefinitelyTyped</a>, MIT</li>
+            <li>Wrangler 4 and Cloudflare Pages (hosting), <a href="https://pages.cloudflare.com" target="_blank" rel="noopener">pages.cloudflare.com</a></li>
+            <li>GitHub (source code), <a href="https://github.com" target="_blank" rel="noopener">github.com</a></li>
+            <li>Claude Code, by Anthropic, for AI assistance with the code, <a href="https://claude.com/claude-code" target="_blank" rel="noopener">claude.com/claude-code</a>. See Use of AI below.</li>
+            <li>Impeccable, a design guidance skill for Claude Code, Apache 2.0, <a href="https://impeccable.style" target="_blank" rel="noopener">impeccable.style</a></li>
+          </ul>
+        </div></li>
+        <li id="s-19"><span class="ref-no">S19</span><div>
+          <p class="cite-line"><b>Lunar Landing Site Navigator</b>, a challenge of the 2026 NASA Space Apps Challenge. <a href="https://www.spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator/" target="_blank" rel="noopener">spaceappschallenge.org/2026/challenges/lunar-landing-site-navigator</a></p>
+          <p><span class="tag">Used for</span> The brief this tool answers.</p>
+        </div></li>
+        <li id="s-20"><span class="ref-no">S20</span><div>
+          <p class="cite-line">Bussey, D. B. J., McGovern, J. A., Spudis, P. D., Neish, C. D., Noda, H., Ishihara, Y. and Sørensen, S.-A. (2010). <b>Illumination conditions of the south pole of the Moon derived using Kaguya topography.</b> <i>Icarus</i> 208, 558–564. <a href="https://doi.org/10.1016/j.icarus.2010.03.028" target="_blank" rel="noopener">doi:10.1016/j.icarus.2010.03.028</a></p>
+          <p><span class="tag">Used for</span> The reference point of LLS 04, 88.74° S 124.5° E, the most-illuminated point as the abstract and conclusions give it, and the published points near LLS 03 (Point C) and LLS 05 (M1 and M2). The paper’s Table 2 gives LLS 04’s point as 88.79° S, and its section 5 misprints it as “99.79°S”.</p>
+          <p><span class="tag">Checked against</span> All seven pages, read in a separate working session from a copy of the article. Not re-read for this update, because no free copy could be found. The citation itself matches the reference list of De Rosa et al. ${ref('s-21')}.</p>
+        </div></li>
+        <li id="s-21"><span class="ref-no">S21</span><div>
+          <p class="cite-line">De Rosa, D., Bussey, B., Cahill, J. T., Lutz, T., Crawford, I., Hackwill, T., van Gasselt, S., Neukum, G., Witte, L., McGovern, A. and Carpenter, J. D. (2012). <b>Characterisation of Potential Landing Sites for the European Space Agency’s Lunar Lander Project.</b> <i>Planetary and Space Science</i>. <a href="https://arxiv.org/abs/1208.5587" target="_blank" rel="noopener">arXiv:1208.5587</a>, <a href="https://doi.org/10.1016/j.pss.2012.08.002" target="_blank" rel="noopener">doi:10.1016/j.pss.2012.08.002</a></p>
+          <p><span class="tag">Used for</span> Published points near the crest sites, from Table 2, in the mean Earth/polar axis frame: GR1 “de Gerlache Rim” near LLS 03, SV1 “Shackleton Vicinity” near LLS 04, and MP2 “Malapert Peak” near LLS 05.</p>
+          <p><span class="tag">Checked against</span> The arXiv preprint: the body text, Tables 1 to 3 and most figures, read in a separate working session. Table 2 was read again directly for this update. The journal volume and pages were not confirmed.</p>
+        </div></li>
       </ol>
-      <p>Mission sites in the catalogue are placed at their reported landing coordinates. The other crest sites are the highest cell of the 240 m grid within a few kilometres of the point named in each site’s details. The “LLS” numbers are this tool’s own catalogue and are not official designations.</p>
+      <p>Mission sites in the catalogue use the coordinates in ${ref('s-12')}. Crest sites are the highest cell of the 240 m grid within a few kilometres of the reference point named in each site’s details. The “LLS” numbers are this tool’s own catalogue and are not official designations.</p>
     </section>
 
     <section id="ab-data">

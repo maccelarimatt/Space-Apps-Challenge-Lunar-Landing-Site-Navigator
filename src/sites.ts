@@ -12,7 +12,10 @@ export interface Site extends LatLon {
 }
 
 // Crest sites are the highest point in the 240 m LOLA grid within a few
-// kilometres of the published coordinates, so the pin sits on the ridge itself.
+// kilometres of a reference point, so the pin sits on the ridge itself.
+// Mission sites use the coordinates in NASA's NSSDC table (source S12 on the About page).
+const NSSDC = 'NASA’s NSSDC Table of Anthropogenic Impacts and Spacecraft on the Moon (source S12)';
+
 export const SITES: Site[] = [
   {
     no: 1,
@@ -21,7 +24,8 @@ export const SITES: Site[] = [
     lon: 222.686,
     group: 'pole',
     note: 'Crest between Shackleton and de Gerlache craters, one of the best-lit places near the pole.',
-    detail: 'Highest grid point within 2 km of 89.45°S 222.69°E.',
+    detail:
+      'Highest grid point within 2 km of 89.45°S 222.69°E, the Connecting Ridge point of Mazarico et al. (2011) as listed by Gläser et al. (2018), sources S7 and S8 on the About page.',
   },
   {
     no: 2,
@@ -30,7 +34,8 @@ export const SITES: Site[] = [
     lon: 204.274,
     group: 'pole',
     note: 'High point on the rim of Shackleton crater.',
-    detail: 'Highest grid point within 3 km of 89.78°S 204.27°E.',
+    detail:
+      'Highest grid point within 3 km of 89.78°S 204.27°E, the Shackleton point of Mazarico et al. (2011) as listed by Gläser et al. (2018), sources S7 and S8 on the About page.',
   },
   {
     no: 3,
@@ -39,7 +44,8 @@ export const SITES: Site[] = [
     lon: 291.77,
     group: 'pole',
     note: 'High point on the rim of de Gerlache crater.',
-    detail: 'Highest grid point within 4 km of 88.67°S 291.8°E.',
+    detail:
+      'Highest grid point within 4 km of 88.67°S 291.8°E. Two published points on this rim lie inside that search: Point C of Bussey et al. (2010), 88.71°S 291.3°E, and GR1 “de Gerlache Rim” of De Rosa et al. (2012), 88.6952°S 291.7154°E, about 0.9 km from the pin (sources S20 and S21). The IAU Gazetteer gives the crater’s centre as 88.48°S 271.66°E and its diameter as 32.7 km (source S11).',
   },
   {
     no: 4,
@@ -47,8 +53,9 @@ export const SITES: Site[] = [
     lat: -88.807,
     lon: 123.637,
     group: 'pole',
-    note: 'A well-lit crest on the far side of Shackleton from the connecting ridge.',
-    detail: 'Highest grid point within 3 km of 88.74°S 124.5°E.',
+    note: 'A crest on the far side of Shackleton from the connecting ridge, near the most-illuminated point found by Bussey et al. (2010).',
+    detail:
+      'Highest grid point within 3 km of 88.74°S 124.5°E, the most-illuminated point in the abstract of Bussey et al. (2010). Their Table 2 gives it as 88.79°S 124.5°E, about 0.8 km from the pin. De Rosa et al. (2012) list SV1 “Shackleton Vicinity” at 88.8247°S 124.1359°E, about 0.6 km from the pin (sources S20 and S21).',
   },
   {
     no: 5,
@@ -56,8 +63,9 @@ export const SITES: Site[] = [
     lat: -85.9902,
     lon: 2.092,
     group: 'pole',
-    note: 'A 5 km mountain on the Earth-facing side of the pole.',
-    detail: 'Highest grid point within 20 km of 86.0°S 0°E.',
+    note: 'Top of Mons Malapert, a mountain on the Earth-facing side of the pole, about 5 km above the Moon’s reference sphere in NASA’s LOLA data.',
+    detail:
+      'Highest grid point within 20 km of 86.0°S 0°E, a point between the Malapert points M1 (86.04°S 2.7°E) and M2 (86.00°S 357.1°E) of Bussey et al. (2010). The pin is about 2 km from M1 and from MP2 “Malapert Peak” of De Rosa et al. (2012), 86.0265°S 2.758°E (sources S20 and S21), and about 8 km from the centre of Mons Malapert in the IAU Gazetteer (source S11). Height from the LOLA grid (source S1).',
   },
   {
     no: 6,
@@ -66,6 +74,7 @@ export const SITES: Site[] = [
     lon: 29.1957,
     group: 'pole',
     note: 'Where Intuitive Machines’ Athena lander touched down on 6 March 2025.',
+    detail: `Coordinates and date from ${NSSDC}, and LROC’s image of the lander (source S13).`,
   },
   {
     no: 7,
@@ -73,7 +82,9 @@ export const SITES: Site[] = [
     lat: -85.42,
     lon: 31.62,
     group: 'pole',
-    note: 'Approximate site planned for NASA’s VIPER rover near the western rim of Nobile crater.',
+    note: 'Approximate site for NASA’s VIPER rover near the western edge of Nobile crater. Its delivery is planned for late 2027.',
+    detail:
+      'NASA chose a landing region near the western edge of Nobile crater in 2021 but published no single point, so this pin is placed by this tool, on Mons Mouton west of the crater (sources S11 and S14). NASA cancelled VIPER in 2024, then in September 2025 selected Blue Origin to deliver it in late 2027, subject to an option NASA has yet to take up (source S14).',
   },
   {
     no: 8,
@@ -82,6 +93,8 @@ export const SITES: Site[] = [
     lon: 129.78,
     group: 'pole',
     note: 'Inside a permanently shadowed crater: never any Sun, never any Earth.',
+    detail:
+      'The centre of Shackleton crater as the IAU Gazetteer of Planetary Nomenclature gives it (source S11). Its floor is permanently shadowed (source S15), and this tool’s own check agrees.',
   },
   {
     no: 9,
@@ -91,22 +104,25 @@ export const SITES: Site[] = [
     // Just inside the terrain grid, so its horizon is real terrain to the south and missing to the north.
     group: 'pole',
     note: 'Intuitive Machines’ first lander, February 2024, near Malapert A crater.',
+    detail: `Coordinates and date from ${NSSDC}, and NASA’s LRO report on the landing (source S13).`,
   },
   {
     no: 10,
     name: 'Chandrayaan-3',
-    lat: -69.373,
-    lon: 32.319,
+    lat: -69.3741,
+    lon: 32.32,
     group: 'elsewhere',
     note: 'India’s Vikram lander and Pragyan rover, August 2023.',
+    detail: `Coordinates and date from ${NSSDC}, and LROC’s image of the site. Lander and rover names from ISRO (source S13).`,
   },
   {
     no: 11,
     name: 'Chang’e 4',
-    lat: -45.4446,
-    lon: 177.5991,
+    lat: -45.4561,
+    lon: 177.5885,
     group: 'elsewhere',
-    note: 'China’s far-side lander, January 2019. Earth never rises here, so it needs a relay satellite.',
+    note: 'China’s far-side lander, January 2019. Earth never rises here, so it talked to Earth through the relay satellite Queqiao.',
+    detail: `Coordinates and date from ${NSSDC}. The relay from the China National Space Administration (source S13).`,
   },
   {
     no: 12,
@@ -115,6 +131,7 @@ export const SITES: Site[] = [
     lon: 206.0148,
     group: 'elsewhere',
     note: 'China’s far-side sample return, June 2024.',
+    detail: `Coordinates and date from ${NSSDC}, and LROC’s image of the lander (source S13).`,
   },
   {
     no: 13,
@@ -123,14 +140,16 @@ export const SITES: Site[] = [
     lon: 25.251,
     group: 'elsewhere',
     note: 'Japan’s precision lander, January 2024.',
+    detail: `Coordinates and date from ${NSSDC}, and LROC’s image of the lander. Its precision-landing aim from JAXA (source S13).`,
   },
   {
     no: 14,
     name: 'Apollo 11',
-    lat: 0.6742,
-    lon: 23.4731,
+    lat: 0.67416,
+    lon: 23.47314,
     group: 'elsewhere',
     note: 'Tranquility Base, July 1969.',
+    detail: `Lunar module coordinates and date from ${NSSDC}. The name Tranquility Base from NASA’s Apollo Lunar Surface Journal (source S13).`,
   },
   {
     no: 15,
@@ -139,14 +158,16 @@ export const SITES: Site[] = [
     lon: 61.81,
     group: 'elsewhere',
     note: 'Firefly Aerospace’s lander in Mare Crisium, March 2025.',
+    detail: `Coordinates and date from ${NSSDC}. The site from Firefly Aerospace (source S13).`,
   },
   {
     no: 16,
     name: 'Apollo 17',
-    lat: 20.1908,
-    lon: 30.7717,
+    lat: 20.1911,
+    lon: 30.7723,
     group: 'elsewhere',
     note: 'Taurus-Littrow valley, December 1972.',
+    detail: `Lunar module descent stage coordinates and date from ${NSSDC}. The valley from NASA Science (source S13).`,
   },
 ];
 

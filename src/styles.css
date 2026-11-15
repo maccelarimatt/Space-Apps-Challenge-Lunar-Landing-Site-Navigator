@@ -606,9 +606,9 @@ main:focus {
   .cmp-work > .picker {
     position: sticky;
     top: 0;
-    /* Short enough to fit between the top bar and the page's bottom padding, so at the end of
-       the page the column is not pushed up under the bar. */
-    max-height: calc(100dvh - 180px);
+    /* As tall as the panel shows: the 52px top bar and the panel's 26px and 48px padding come
+       off the window height, so the whole column is in view and never slides under the bar. */
+    max-height: calc(100dvh - 126px);
     display: flex;
     flex-direction: column;
   }
@@ -619,6 +619,9 @@ main:focus {
   }
 
   .cmp-work #picker {
+    /* Positioned so the tiles' hidden screen-reader labels are clipped by this list. Without it
+       they escape, and the page scrolls on past the list into empty space. */
+    position: relative;
     min-height: 0;
     overflow-y: auto;
     padding: 0 6px 12px 0;

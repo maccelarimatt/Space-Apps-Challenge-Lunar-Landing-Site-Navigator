@@ -12,7 +12,8 @@ export const MOON_RADIUS_KM = 1737.4;
 export const SUN_RADIUS_KM = 695_700;
 export const EARTH_RADIUS_KM = 6378.137;
 export const AU_KM = 149_597_870.7;
-export const SYNODIC_MONTH_DAYS = 29.530588853;
+/** Mean synodic month for the year 2000, from Espenak's moon-phase tables (source S10 on the About page). */
+export const SYNODIC_MONTH_DAYS = 29.530588;
 
 const D2R = Math.PI / 180;
 const R2D = 180 / Math.PI;

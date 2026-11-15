@@ -165,6 +165,13 @@ const sideBySide = await fresh.evaluate(() => {
   return s.left >= t.right && s.top < innerHeight && t.top < innerHeight;
 });
 check('on a wide screen the table and the sites sit side by side', sideBySide);
+const overscroll = await fresh.evaluate(() => {
+  const c = document.querySelector('.compare') as HTMLElement;
+  const work = document.querySelector('.cmp-work')!.getBoundingClientRect();
+  const end = work.bottom - c.getBoundingClientRect().top + c.scrollTop + parseFloat(getComputedStyle(c).paddingBottom);
+  return c.scrollHeight - end;
+});
+check('the Compare page ends where the site list ends', Math.abs(overscroll) < 4, `${Math.round(overscroll)} px of extra scroll`);
 await fresh.click('.pick[data-key="-85.9902,2.0920"]');
 await wait(600);
 check('picking it again takes it out', (await fresh.$$('.cmp tbody tr')).length === 0);

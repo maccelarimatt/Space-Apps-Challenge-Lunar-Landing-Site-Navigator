@@ -205,7 +205,7 @@ export function nextChange(
 
 /** Start of the mean lunar day (synodic month) containing a time, and its index. */
 export function lunarDayOf(timeMs: number): { index: number; startMs: number } {
-  // Reference new moon: 2000-01-06 18:14 UTC.
+  // Reference new moon: 2000-01-06 18:14 UT, from Espenak's moon-phase tables (source S10 on the About page).
   const epoch = Date.UTC(2000, 0, 6, 18, 14);
   const index = Math.floor((timeMs - epoch) / LUNAR_DAY_MS);
   return { index, startMs: epoch + index * LUNAR_DAY_MS };

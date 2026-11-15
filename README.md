@@ -62,6 +62,19 @@ Each of these was read in full for the About page unless marked otherwise.
 - Mazarico, E. et al. (2011). Illumination conditions of the lunar polar regions using LOLA topography. *Icarus* 211, 1066–1081. **Not read directly.** Cited only as Gläser et al. (2018) describe it.
 - **Astronomy Engine** 2.1.19 by Don Cross and **three.js** 0.187, both MIT licensed. Astronomy Engine's own code and documentation were read. The book and IAU report they cite were not.
 - Typefaces: Public Sans and Marcellus SC, SIL Open Font Licence 1.1.
+- Espenak, F., **Phases of the Moon: 1901 to 2000** ([AstroPixels](https://astropixels.com/ephemeris/phasescat/phases1901.html)). The mean lunar month for 2000 and the new moon of 6 January 2000, used to number the rows of the year plot.
+- **Gazetteer of Planetary Nomenclature**, IAU and USGS ([planetarynames.wr.usgs.gov](https://planetarynames.wr.usgs.gov/)). Names and positions of Shackleton, de Gerlache, Mons Malapert, Mons Mouton, Nobile and Malapert A.
+- **Table of Anthropogenic Impacts and Spacecraft on the Moon**, NASA NSSDCA ([link](https://nssdc.gsfc.nasa.gov/planetary/lunar/lunar_artifact_impacts.html)). Coordinates and dates of every past mission in the catalogue.
+- **Mission reports** from NASA, LROC, ISRO, CNSA, JAXA and Firefly Aerospace for the notes in the catalogue, each linked on the About page.
+- **VIPER**: NASA releases of [20 September 2021](https://www.nasa.gov/news-release/nasas-artemis-rover-to-land-near-nobile-region-of-moons-south-pole/) and [19 September 2025](https://www.nasa.gov/news-release/nasa-selects-blue-origin-to-deliver-viper-rover-to-moons-south-pole/).
+- **ShadowCam First Look** ([link](https://shadowcam.im-ldi.com/images/1284)). Shackleton's floor is permanently shadowed.
+- **Earth Fact Sheet**, NASA NSSDCA ([link](https://nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html)), and NASA pages on the Sun's dim edge and lunar eclipses seen from the Moon, for notes under Constraints.
+- Tools: Vite, TypeScript, Vitest, Puppeteer, sharp, tsx, Node.js, Wrangler, Cloudflare Pages, GitHub, Claude Code and the Impeccable design skill, listed with links and licences on the About page.
+
+- Bussey, D. B. J. et al. (2010). Illumination conditions of the south pole of the Moon derived using Kaguya topography. *Icarus* 208, 558–564 ([doi:10.1016/j.icarus.2010.03.028](https://doi.org/10.1016/j.icarus.2010.03.028)). The reference point of LLS 04 and published points near LLS 03 and LLS 05.
+- De Rosa, D. et al. (2012). Characterisation of Potential Landing Sites for the European Space Agency's Lunar Lander Project. *Planetary and Space Science* ([arXiv:1208.5587](https://arxiv.org/abs/1208.5587)). Published points near LLS 03, LLS 04 and LLS 05.
+
+Every source is listed on the About tab with what was taken from it. LLS 03 and LLS 05 use reference points chosen for this tool, with published points from Bussey et al. and De Rosa et al. close by, and the About page says so.
 
 ## Use of AI
 
