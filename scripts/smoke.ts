@@ -64,6 +64,8 @@ check('coordinates accept "88.5 S"', (await text('#s-ll')).startsWith('88.50° S
 
 await page.click('[data-view="map"]');
 await wait(1500);
+check('the map labels more than the chosen site', (await page.$$('.map .pin.labelled')).length >= 4, String((await page.$$('.map .pin.labelled')).length));
+check('the map says which sites are off it', (await text('#stage-cap')).includes('on the Globe only'), await text('#stage-cap'));
 const mapBox = (await (await page.$('#map'))!.boundingBox())!;
 await page.mouse.click(mapBox.x + mapBox.width * 0.3, mapBox.y + mapBox.height * 0.3);
 await wait();

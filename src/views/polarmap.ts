@@ -68,16 +68,21 @@ export function createPolarMap(host: HTMLElement, opts: MapOptions): MapApi {
   // Graticule labels live in screen space so they stay the same size at any zoom:
   // latitude on one meridian, longitude on two rings so some are always in view.
   const labelHost = host.querySelector<HTMLElement>('.map-labels')!;
-  const labels: { el: HTMLElement; at: LatLon }[] = [];
-  const addLabel = (text: string, at: LatLon) => {
+  /** `outer` links an inner-ring longitude label to its twin on the outer ring, so only one shows at a time. */
+  const labels: { el: HTMLElement; at: LatLon; outer?: LatLon }[] = [];
+  const addLabel = (text: string, at: LatLon, outer?: LatLon) => {
     const el = document.createElement('span');
     el.textContent = text;
     labelHost.append(el);
-    labels.push({ el, at });
+    labels.push({ el, at, outer });
   };
   // On the 345°E meridian: clear of every catalogued site and of the longitude labels.
   for (let lat = -88; lat <= -82; lat += 2) addLabel(`${-lat}°S`, { lat, lon: 345 });
-  for (const lat of [-87, -83]) for (let lon = 30; lon < 360; lon += 30) addLabel(`${lon}°E`, { lat, lon });
+  // Longitudes on the 83°S ring, and again on the 87°S ring for when the outer ring is off screen.
+  for (let lon = 30; lon < 360; lon += 30) {
+    addLabel(`${lon}°E`, { lat: -83, lon });
+    addLabel(`${lon}°E`, { lat: -87, lon }, { lat: -83, lon });
+  }
 
   const scaleBar = host.querySelector<HTMLElement>('.map-scale i')!;
   const scaleText = host.querySelector<HTMLElement>('.map-scale span')!;
@@ -140,25 +145,73 @@ export function createPolarMap(host: HTMLElement, opts: MapOptions): MapApi {
     draw(earthRay, earth);
   }
 
+  type Box = { l: number; t: number; r: number; b: number };
+  const hits = (a: Box, b: Box) => a.l < b.r && b.l < a.r && a.t < b.b && b.t < a.b;
+  const onScreen = (x: number, y: number) => x >= 0 && y >= 0 && x <= host.clientWidth && y <= host.clientHeight;
+  // Label widths never change once drawn, so measure each once rather than on every frame of a drag.
+  const widths = new WeakMap<HTMLElement, number>();
+  const widthOf = (el: HTMLElement) => {
+    let w = widths.get(el);
+    if (!w) {
+      w = el.offsetWidth;
+      if (w) widths.set(el, w);
+    }
+    return w;
+  };
+
   function apply() {
     clamp();
     layer.style.transform = `translate(${tx}px, ${ty}px) scale(${scale})`;
-    for (const { el, at } of labels) {
-      const p = imagePoint(at)!;
-      el.style.transform = `translate(${tx + p.x * scale}px, ${ty + p.y * scale}px)`;
-    }
     // Scale bar: the largest round distance that fits in about 140 px. True at the pole.
     const kmPerPx = MPP / 1000 / scale;
     const km = [200, 100, 50, 20, 10, 5, 2, 1].find((d) => d / kmPerPx <= 140) ?? 1;
     scaleBar.style.width = `${km / kmPerPx}px`;
     scaleText.textContent = `${km} km`;
+
+    // Every site on the map gets its number, unless it would sit on top of another label. The selected
+    // site goes first, then the rest in catalogue order. A label that does not fit on the right of its
+    // pin tries the left. Those still crowded out appear as you zoom in, and on hover.
+    const taken: Box[] = [];
+    const placed: { el: HTMLButtonElement; x: number; y: number }[] = [];
     for (const site of sites) {
       const el = pinEls.get(siteKey(site));
       if (!el) continue;
       const p = imagePoint(site);
       el.hidden = !p;
-      if (p) el.style.transform = `translate(${tx + p.x * scale}px, ${ty + p.y * scale}px)`;
+      if (!p) continue;
+      const x = tx + p.x * scale;
+      const y = ty + p.y * scale;
+      el.style.transform = `translate(${x}px, ${y}px)`;
+      placed.push({ el, x, y });
+      taken.push({ l: x - 5, t: y - 5, r: x + 5, b: y + 5 });
     }
+    const order = placed.slice().sort((a, b) => Number(b.el.classList.contains('on')) - Number(a.el.classList.contains('on')));
+    for (const { el, x, y } of order) {
+      const w = widthOf(el.querySelector('b') as HTMLElement);
+      const right = { l: x + 18, t: y - 10, r: x + 22 + w, b: y + 10 };
+      const left = { l: x - 22 - w, t: y - 10, r: x - 18, b: y + 10 };
+      const fits = (box: Box) => onScreen(box.l, box.t) && onScreen(box.r, box.b) && !taken.some((t) => hits(t, box));
+      const side = el.classList.contains('on') ? right : fits(right) ? right : fits(left) ? left : null;
+      el.classList.toggle('labelled', !!side);
+      el.classList.toggle('flip', side === left);
+      if (side) taken.push(side);
+    }
+
+    // Graticule labels are the quietest layer: they give way to site labels, and a longitude on the
+    // inner ring only shows when its twin on the outer ring is off screen.
+    for (const { el, at, outer } of labels) {
+      const p = imagePoint(at)!;
+      const x = tx + p.x * scale;
+      const y = ty + p.y * scale;
+      el.style.transform = `translate(${x}px, ${y}px)`;
+      const o = outer && imagePoint(outer)!;
+      const twinShown = !!o && onScreen(tx + o.x * scale, ty + o.y * scale);
+      const w = widthOf(el) / 2;
+      const box = { l: x - w, t: y - 7, r: x + w, b: y + 7 };
+      // Visibility, not display, so the label keeps its size for the next frame's check.
+      el.style.visibility = twinShown || taken.some((t) => hits(t, box)) ? 'hidden' : '';
+    }
+
     note.hidden = !selected || !!imagePoint(selected);
     rays();
   }
@@ -184,8 +237,8 @@ export function createPolarMap(host: HTMLElement, opts: MapOptions): MapApi {
     if (!host.clientWidth) return;
     if (!fitted) {
       fitted = true;
-      // Open on the innermost 5 degrees, where the candidate sites are.
-      centre(selected && imagePoint(selected) ? selected : { lat: -90, lon: 0 }, Math.max(minScale(), Math.min(host.clientWidth, host.clientHeight) / (ringRadius(-85.5) * 2)));
+      // Open on the whole map, out to 80°S, so every site on it is in view. Zoom in for the crowded pole.
+      centre({ lat: -90, lon: 0 }, Math.max(minScale(), Math.min(host.clientWidth, host.clientHeight) / (ringRadius(-80) * 2 + 24)));
     } else {
       apply();
     }
@@ -202,6 +255,9 @@ export function createPolarMap(host: HTMLElement, opts: MapOptions): MapApi {
     { passive: false },
   );
 
+  // The terrain grid is square, and its corners beyond 80°S hold real heights too, so the whole image can be picked.
+  const onMap = (x: number, y: number) => x >= 0 && y >= 0 && x <= N && y <= N;
+
   let drag: { x: number; y: number; tx: number; ty: number; moved: boolean } | null = null;
   host.addEventListener('pointerdown', (e) => {
     if ((e.target as HTMLElement).closest('button')) return;
@@ -213,7 +269,7 @@ export function createPolarMap(host: HTMLElement, opts: MapOptions): MapApi {
     const r = host.getBoundingClientRect();
     const mx = (e.clientX - r.left - tx) / scale;
     const my = (e.clientY - r.top - ty) / scale;
-    if (Math.hypot(mx - C, my - C) <= ringRadius(-80)) {
+    if (onMap(mx, my)) {
       const p = demLatLon(SOUTH_POLE_GRID, mx - 0.5, my - 0.5);
       cursor.textContent = `${(-p.lat).toFixed(2)}° S, ${p.lon.toFixed(2)}° E`;
     } else {
@@ -232,7 +288,7 @@ export function createPolarMap(host: HTMLElement, opts: MapOptions): MapApi {
     const r = host.getBoundingClientRect();
     const x = (e.clientX - r.left - tx) / scale;
     const y = (e.clientY - r.top - ty) / scale;
-    if (Math.hypot(x - C, y - C) > ringRadius(-80)) return;
+    if (!onMap(x, y)) return;
     const p = demLatLon(SOUTH_POLE_GRID, x - 0.5, y - 0.5);
     opts.onPick(p.lat, p.lon);
   });

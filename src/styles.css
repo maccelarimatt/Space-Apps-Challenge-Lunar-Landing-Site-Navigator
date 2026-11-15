@@ -1066,6 +1066,11 @@ main:focus {
   overflow: hidden;
 }
 
+/* The map's caption runs a line longer than the globe's, so the map stops higher. */
+.map {
+  bottom: 76px;
+}
+
 .globe-canvas,
 .sky-canvas {
   display: block;
@@ -1153,6 +1158,26 @@ main:focus {
 .pin:focus-visible b,
 .pin.on b {
   opacity: 1;
+}
+
+/* On the map every site is labelled where there is room. Unselected labels are quieter than the chosen one. */
+.map .pin.labelled b {
+  opacity: 1;
+}
+
+.map .pin:not(.on) b {
+  font-weight: 500;
+  color: #d0d0d0;
+  background: rgb(12 12 12 / 0.82);
+}
+
+.map .pin:not(.on):hover b {
+  color: var(--ink);
+}
+
+.map .pin.flip b {
+  left: auto;
+  right: 22px;
 }
 
 .pin.on::after {
@@ -2925,6 +2950,10 @@ circle.earth {
   .globe,
   .map {
     inset: 0 0 74px;
+  }
+
+  .map {
+    bottom: 100px;
   }
 
   .cap {

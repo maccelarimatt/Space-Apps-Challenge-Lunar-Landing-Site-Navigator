@@ -418,6 +418,7 @@ function renderStage() {
 function renderStageSites() {
   globe?.setSites(allSites(), state.site);
   map?.setSites(allSites(), state.site);
+  renderStageCap();
 }
 
 function renderStageView() {
@@ -431,10 +432,20 @@ function renderStageView() {
   }
   globe?.setActive(state.tab === 'choose' && state.view === 'globe');
   map?.setActive(state.tab === 'choose' && state.view === 'map');
+  renderStageCap();
+}
+
+/** The caption under the globe or map. On the map it also says how many listed sites lie off it. */
+function renderStageCap() {
+  if (state.view === 'globe') {
+    $('stage-cap').textContent =
+      'Imagery from NASA’s Lunar Reconnaissance Orbiter, lit from the Sun’s real direction at the chosen time. Yellow line: toward the Sun. Blue line: toward Earth. Click the Moon to drop a pin.';
+    return;
+  }
+  const off = allSites().filter((s) => !hasTerrain(s)).length;
   $('stage-cap').textContent =
-    state.view === 'globe'
-      ? 'Imagery from NASA’s Lunar Reconnaissance Orbiter, lit from the Sun’s real direction at the chosen time. Yellow line: toward the Sun. Blue line: toward Earth. Click the Moon to drop a pin.'
-      : 'Shaded relief from NASA LOLA elevation data, 80°S to the pole. The shading is fixed and does not show real shadows. Click the map to drop a pin.';
+    'NASA LOLA shaded relief of the south polar cap, from about 80°S. The shading is fixed, not real shadows. Scroll or use + to zoom, and click to drop a pin.' +
+    (off ? ` ${off === 1 ? 'One listed site lies' : `${off} listed sites lie`} further north, on the Globe only.` : '');
 }
 
 // --- Compare -----------------------------------------------------------------
