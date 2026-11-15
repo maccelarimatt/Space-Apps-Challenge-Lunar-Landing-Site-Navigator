@@ -39,6 +39,8 @@ check('terrain loaded', (await text('#s-ll')).includes('ground'), await text('#s
 await page.click('.site[data-key="-85.9902,2.0920"]');
 await wait();
 check('list selects Malapert', (await text('#s-no')) === 'LLS 05', await text('#s-name'));
+// Let the globe finish turning to Malapert, or the next click can land on its pin mid-turn.
+await wait(1800);
 
 const box = (await (await page.$('.globe-canvas'))!.boundingBox())!;
 await page.mouse.click(box.x + box.width * 0.5, box.y + box.height * 0.42);
@@ -147,10 +149,14 @@ await wait(600);
 check('Now takes the date back out', !(await fresh.evaluate(() => location.hash)).includes('t='));
 await fresh.click('[data-tab="compare"]');
 await wait(500);
-check('compare hides coordinate entry', (await fresh.$eval('#d-goto', (el) => getComputedStyle(el).display)) === 'none');
-await fresh.click('.site[data-key="-85.9902,2.0920"]');
+check('compare hides the side list', (await fresh.$eval('.sites', (el) => getComputedStyle(el).display)) === 'none');
+await fresh.click('.pick[data-key="-85.9902,2.0920"]');
 await wait(800);
-check('on Compare, the site list adds a scenario', (await fresh.$$('.cmp tbody tr')).length === 1, await fresh.$eval('#cmp-status', (el) => el.textContent ?? ''));
+check('on Compare, picking a site adds a scenario', (await fresh.$$('.cmp tbody tr')).length === 1, await fresh.$eval('#cmp-status', (el) => el.textContent ?? ''));
+check('the picked tile shows as in', (await fresh.$eval('.pick[data-key="-85.9902,2.0920"]', (el) => el.getAttribute('aria-pressed'))) === 'true');
+await fresh.click('.pick[data-key="-85.9902,2.0920"]');
+await wait(600);
+check('picking it again takes it out', (await fresh.$$('.cmp tbody tr')).length === 0);
 
 // My sites: save the pin, rename it, and find it again after a reload. Storage is this browser's only.
 const mine = await browser.newPage();
@@ -158,13 +164,15 @@ await mine.goto(`${base}#site=-88.2000,40.0000`, { waitUntil: 'networkidle0' });
 await wait(1500);
 check('an unsaved pin offers to save', (await mine.$('[data-mine="save"]')) !== null);
 await mine.click('[data-mine="save"]');
-await wait(800);
-check('saving gives it the next MY number', (await mine.$eval('#s-no', (el) => el.textContent)) === 'MY 01');
-check('saving opens the name field', !(await mine.$eval('#rename', (el) => (el as HTMLElement).hidden)));
-await mine.$eval('#rename-input', (el) => ((el as HTMLInputElement).value = ''));
+await wait(400);
+check('saving asks for a name first', !(await mine.$eval('#rename', (el) => (el as HTMLElement).hidden)) && (await mine.$eval('#s-no', (el) => el.textContent)) === 'Custom site');
+await mine.keyboard.press('Enter');
+await wait(300);
+check('a blank name is refused', !(await mine.$eval('#rename-err', (el) => (el as HTMLElement).hidden)));
 await mine.type('#rename-input', 'Ridge <b>B</b>');
 await mine.keyboard.press('Enter');
 await wait(600);
+check('saving gives it the next MY number', (await mine.$eval('#s-no', (el) => el.textContent)) === 'MY 01');
 check('the new name shows as text, not markup', (await mine.$eval('#s-name', (el) => el.textContent)) === 'Ridge <b>B</b>');
 check('it is listed under My sites', (await mine.$$('#list-mine .site')).length === 1);
 await mine.reload({ waitUntil: 'networkidle0' });
@@ -176,16 +184,16 @@ await wait(500);
 await mine.click('#add');
 await mine.click('[data-tab="compare"]');
 await wait(800);
-await mine.select('#f-source', 'mine');
+await mine.click('#f-source [data-v="mine"]');
 await wait(800);
-check('the Sites filter narrows the table', (await mine.$$('.cmp tbody tr')).length === 1, await mine.$eval('#f-count', (el) => el.textContent ?? ''));
-check('and the site list beside it', (await mine.$$('.sites .site')).length === 1);
+check('the Show filter narrows the table', (await mine.$$('.cmp tbody tr')).length === 1, await mine.$eval('#f-count', (el) => el.textContent ?? ''));
+check('and the site picker', (await mine.$$('.pick')).length === 1);
 await mine.click('#f-clear');
 await wait(600);
 check('Clear filters brings them back', (await mine.$$('.cmp tbody tr')).length === 2);
-await mine.select('#f-sort', 'sun');
+await mine.click('.th-sort[data-sort="sun"]');
 await wait(600);
-check('sorting marks the Sun column', (await mine.$$('.cmp thead th.sorted')).length === 1);
+check('clicking a column header sorts by it', (await mine.$$('.cmp thead th.sorted')).length === 1 && (await mine.$eval('#f-sort', (el) => (el as HTMLSelectElement).value)) === 'sun');
 
 check('no console errors', errors.length === 0, errors.join(' | '));
 await browser.close();

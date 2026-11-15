@@ -57,7 +57,6 @@
 
     <div class="app" id="app" data-tab="choose">
       <aside class="sites" aria-label="Landing sites">
-        <p class="sites-hint" data-for="compare">Click a site to add it to Compare, landing at the date and time above. The filters on the right narrow this list too.</p>
         <div class="mine-block" id="mine-block" hidden>
           <h2>My sites <span>saved in this browser</span></h2>
           <ul class="site-list" id="list-mine"></ul>
@@ -66,7 +65,6 @@
         <ul class="site-list" id="list-pole"></ul>
         <h2 id="h-else">Elsewhere <span>smooth horizon</span></h2>
         <ul class="site-list" id="list-else"></ul>
-        <p class="sites-none" id="sites-none" hidden>No sites match the filters.</p>
         <section class="key" aria-labelledby="key-h">
           <h2 id="key-h">Key</h2>
           <p class="hint">Three blocks per site, at the date and time above.</p>
@@ -129,9 +127,34 @@
         <section class="compare" data-for="compare" aria-label="Compare scenarios">
           <header class="page-head">
             <h1>Compare</h1>
-            <p>Each row is one site and landing date. Bars show the days after landing on the same scale, so the rows can be read against each other.</p>
-            <div class="page-tools">
-              <label>Mission length
+            <p>Pick any number of sites to put them side by side, all landing at the date and time in the top bar. Change the date and pick again to see what a schedule slip costs. Each row of the table is one site and landing date on the same time scale.</p>
+          </header>
+
+          <form class="filters" id="filters" aria-label="Filter and sort">
+            <div class="filter-row">
+              <div class="fgroup">
+                <span class="flabel" id="fl-source">Show</span>
+                <div class="seg small" role="group" aria-labelledby="fl-source" id="f-source">
+                  <button type="button" data-v="all" aria-pressed="true">All</button>
+                  <button type="button" data-v="lls" aria-pressed="false">LLS catalogue</button>
+                  <button type="button" data-v="mine" aria-pressed="false">My sites</button>
+                  <button type="button" data-v="pin" aria-pressed="false">Pins</button>
+                </div>
+              </div>
+              <div class="fgroup">
+                <span class="flabel" id="fl-hemi">Hemisphere</span>
+                <div class="seg small" role="group" aria-labelledby="fl-hemi" id="f-hemi">
+                  <button type="button" data-v="all" aria-pressed="true">Both</button>
+                  <button type="button" data-v="s" aria-pressed="false">South</button>
+                  <button type="button" data-v="n" aria-pressed="false">North</button>
+                </div>
+              </div>
+              <div class="fgroup">
+                <span class="flabel" id="fl-terrain">Terrain</span>
+                <button type="button" class="toggle" id="f-terrain" aria-pressed="false" aria-describedby="fl-terrain">Real terrain only</button>
+              </div>
+              <label class="fgroup">
+                <span class="flabel">Mission length</span>
                 <select id="span">
                   <option value="7">7 days</option>
                   <option value="14" selected>14 days</option>
@@ -140,56 +163,53 @@
                   <option value="365">One year</option>
                 </select>
               </label>
-              <button type="button" id="cmp-add">Add current site and date</button>
             </div>
-            <form class="filters" id="filters" aria-label="Filter and sort the comparison">
-              <div class="filter-row">
-                <label>Sites
-                  <select id="f-source">
-                    <option value="all">All sites</option>
-                    <option value="lls">LLS catalogue</option>
-                    <option value="mine">My sites</option>
-                    <option value="pin">Unsaved pins</option>
-                  </select>
-                </label>
-                <label>Hemisphere
-                  <select id="f-hemi">
-                    <option value="all">Both</option>
-                    <option value="s">Southern</option>
-                    <option value="n">Northern</option>
-                  </select>
-                </label>
-                <label class="check"><input type="checkbox" id="f-terrain" /> Real terrain only</label>
-                <label>Sort by
-                  <select id="f-sort">
-                    <option value="added">Order added</option>
-                    <option value="sun">Most Sun in view</option>
-                    <option value="earth">Most Earth in view</option>
-                    <option value="both">Most of both</option>
-                    <option value="sunH">Most hours in sunlight</option>
-                    <option value="earthH">Most hours in sight of Earth</option>
-                    <option value="dark">Shortest dark stretch</option>
-                    <option value="nolink">Shortest stretch without Earth</option>
-                  </select>
-                </label>
+            <details class="more" id="d-filters">
+              <summary>More filters <span id="f-more-count"></span></summary>
+              <div class="filter-grid">
+                <label class="range"><span class="rl">Sun in view at least <output id="o-minSun">any</output></span><input type="range" id="f-minSun" min="0" max="100" step="5" value="0" /></label>
+                <label class="range"><span class="rl">Earth in view at least <output id="o-minEarth">any</output></span><input type="range" id="f-minEarth" min="0" max="100" step="5" value="0" /></label>
+                <label class="range"><span class="rl">Both at least <output id="o-minBoth">any</output></span><input type="range" id="f-minBoth" min="0" max="100" step="5" value="0" /></label>
+                <label class="range"><span class="rl">Longest dark stretch at most <output id="o-maxDarkH">any</output></span><input type="range" id="f-maxDarkH" min="0" max="720" step="12" value="720" /></label>
+                <label class="range"><span class="rl">Longest without Earth at most <output id="o-maxNoLinkH">any</output></span><input type="range" id="f-maxNoLinkH" min="0" max="720" step="12" value="720" /></label>
+                <fieldset><legend>Latitude, south negative</legend><span><input type="number" id="f-latFrom" min="-90" max="90" step="1" placeholder="−90" aria-label="Latitude from" /> to <input type="number" id="f-latTo" min="-90" max="90" step="1" placeholder="90" aria-label="Latitude to" /> °</span></fieldset>
+                <fieldset><legend>Longitude east</legend><span><input type="number" id="f-lonFrom" min="0" max="360" step="5" placeholder="0" aria-label="Longitude from" /> to <input type="number" id="f-lonTo" min="0" max="360" step="5" placeholder="360" aria-label="Longitude to" /> °</span></fieldset>
               </div>
-              <details class="more" id="d-filters">
-                <summary>More filters <span id="f-more-count"></span></summary>
-                <div class="filter-grid">
-                  <label>Sun in view at least<span><input type="number" id="f-minSun" min="0" max="100" step="5" placeholder="any" /> %</span></label>
-                  <label>Earth in view at least<span><input type="number" id="f-minEarth" min="0" max="100" step="5" placeholder="any" /> %</span></label>
-                  <label>Both at least<span><input type="number" id="f-minBoth" min="0" max="100" step="5" placeholder="any" /> %</span></label>
-                  <label>Longest dark stretch at most<span><input type="number" id="f-maxDarkH" min="0" step="12" placeholder="any" /> h</span></label>
-                  <label>Longest without Earth at most<span><input type="number" id="f-maxNoLinkH" min="0" step="12" placeholder="any" /> h</span></label>
-                  <fieldset><legend>Latitude, south negative</legend><span><input type="number" id="f-latFrom" min="-90" max="90" step="1" placeholder="−90" aria-label="Latitude from" /> to <input type="number" id="f-latTo" min="-90" max="90" step="1" placeholder="90" aria-label="Latitude to" /> °</span></fieldset>
-                  <fieldset><legend>Longitude east</legend><span><input type="number" id="f-lonFrom" min="0" max="360" step="5" placeholder="0" aria-label="Longitude from" /> to <input type="number" id="f-lonTo" min="0" max="360" step="5" placeholder="360" aria-label="Longitude to" /> °</span></fieldset>
-                </div>
-              </details>
-              <p class="filter-count"><span id="f-count" role="status"></span> <button type="button" id="f-clear" hidden>Clear filters</button></p>
-            </form>
+            </details>
+            <p class="filter-count"><span id="f-count" role="status"></span> <button type="button" id="f-clear" hidden>Clear filters</button></p>
+          </form>
+
+          <section class="picker" aria-labelledby="picker-h">
+            <div class="picker-head">
+              <h2 id="picker-h">Sites</h2>
+              <p id="picker-when"></p>
+              <div class="picker-actions">
+                <button type="button" id="pick-all">Add all shown</button>
+                <button type="button" id="pick-none">Remove all shown</button>
+              </div>
+            </div>
+            <div id="picker"></div>
             <p class="status" id="cmp-status" role="status"></p>
-          </header>
-          <div class="cmp-scroll" id="cmp-body"></div>
+          </section>
+
+          <section class="cmp-results" aria-labelledby="cmp-h">
+            <div class="picker-head">
+              <h2 id="cmp-h">Side by side</h2>
+              <label class="sort">Sort by
+                <select id="f-sort">
+                  <option value="added">Order added</option>
+                  <option value="sun">Most Sun in view</option>
+                  <option value="earth">Most Earth in view</option>
+                  <option value="both">Most of both</option>
+                  <option value="sunH">Most hours in sunlight</option>
+                  <option value="earthH">Most hours in sight of Earth</option>
+                  <option value="dark">Shortest dark stretch</option>
+                  <option value="nolink">Shortest stretch without Earth</option>
+                </select>
+              </label>
+            </div>
+            <div class="cmp-scroll" id="cmp-body"></div>
+          </section>
         </section>
 
         <section class="about" data-for="about" aria-label="About Selene’s Compass" id="about"></section>
@@ -200,10 +220,11 @@
           <h1 id="s-no">LLS 01</h1>
           <p class="code big" id="s-code"></p>
           <p class="nm" id="s-name"></p>
-          <form class="rename" id="rename" hidden>
-            <label><span class="vh">Site name</span><input id="rename-input" maxlength="40" autocomplete="off" /></label>
-            <button type="submit" class="primary">Save name</button>
+          <form class="rename" id="rename" hidden novalidate>
+            <label><span class="vh" id="rename-label">Site name</span><input id="rename-input" maxlength="40" autocomplete="off" placeholder="Name this site" /></label>
+            <button type="submit" class="primary" id="rename-ok">Save name</button>
             <button type="button" id="rename-cancel">Cancel</button>
+            <p class="err" id="rename-err" role="alert" hidden></p>
           </form>
           <div class="mine-tools" id="mine-tools"></div>
           <p class="note" id="s-note"></p>

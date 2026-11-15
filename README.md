@@ -11,8 +11,8 @@ Built for the 2026 NASA Space Apps Challenge, "Lunar Landing Site Navigator". Th
 - **Choose a site** on a 3D Moon lit from the Sun's real direction, on a top-down map of the south pole, from a catalogue of past and candidate landing sites, or by typing coordinates.
 - **See a year at a glance.** A stacked plot draws one line per lunar day, showing how far the Sun (or Earth) stands above the terrain.
 - **Analyse a site.** Stand on the surface and look at the real skyline with the Sun and Earth at their true positions and sizes, Earth showing its real face and phase. Press Play to watch them move along the horizon. A timeline shows when each is in view over the next 29.5 days, and a simple calculator estimates solar power and the battery needed to ride through the longest dark spell.
-- **Compare scenarios.** Pin any mix of sites and landing dates and read them side by side on one scale. Filter them by catalogue, hemisphere, terrain, latitude and longitude range, or minimum time in view, and sort by any column. The whole state lives in the page address, so a scenario can be shared as a link.
-- **Save your own sites.** Drop a pin anywhere, save it as MY 01, MY 02 and so on, and give it a name. Saved sites, filters and open sections are kept in the browser's local storage only. There is no server, no account, and nothing is uploaded.
+- **Compare scenarios.** Tick any number of sites in a grid to put them side by side at the chosen landing date, change the date and tick again to add more dates, and read every row on one time scale. Filter by catalogue, hemisphere, terrain, latitude and longitude range, minimum time in view or longest gap, and sort by any column. The whole state lives in the page address, so a scenario can be shared as a link.
+- **Save your own sites.** Drop a pin anywhere, give it a name, and save it. It joins your own catalogue as MY 01, MY 02 and so on. Saved sites, filters and open sections are kept in the browser's local storage only. There is no server, no account, and nothing is uploaded.
 
 ## How it works
 
@@ -81,10 +81,13 @@ The processed data the site needs is already in `public/data/`. To rebuild it fr
 
 Connect the repository in Cloudflare Pages and set:
 
+- Framework preset: None (or Vite)
 - Build command: `npm run build`
 - Build output directory: `dist`
 
-The site is fully static, so the free plan is enough.
+The Node version comes from `.node-version` (22). `public/_headers` sets basic security headers and long caching for the hashed files in `assets/`. The site is fully static, so the free plan is enough.
+
+Nothing a visitor does is stored on the server. Saved sites, Compare filters and open sections live in each visitor's own browser storage, so every visitor has their own and no one sees anyone else's.
 
 ## Licence
 

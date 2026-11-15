@@ -49,6 +49,7 @@ interface Scenario {
 }
 
 const TEN_MIN = 600_000;
+const MAX_SCENARIOS = 24;
 const SOLAR_CONSTANT = 1361; // W/m² at the Moon's distance from the Sun
 
 const nowMs = () => Math.round(Date.now() / TEN_MIN) * TEN_MIN;
@@ -214,18 +215,15 @@ function renderList() {
       <span class="vh">Sun ${fillWord(v.sun.fraction)}, Earth ${fillWord(v.earth.fraction)}</span>
     </button></li>`;
   };
-  // On Compare the list is narrowed by the same place filters as the table.
-  const keep = state.tab === 'compare' ? (s: Site) => siteMatches(s, filters) : () => true;
-  const mine = mySites.filter(keep);
-  const pole = allSites().filter((s) => (s.group === 'pole' || (s.group === 'custom' && inGrid(s))) && keep(s));
-  const rest = allSites().filter((s) => (s.group === 'elsewhere' || (s.group === 'custom' && !inGrid(s))) && keep(s));
+  const mine = mySites;
+  const pole = allSites().filter((s) => s.group === 'pole' || (s.group === 'custom' && inGrid(s)));
+  const rest = allSites().filter((s) => s.group === 'elsewhere' || (s.group === 'custom' && !inGrid(s)));
   $('list-mine').innerHTML = mine.map(row).join('');
   $('mine-block').hidden = !mine.length;
   $('list-pole').innerHTML = pole.map(row).join('');
   $('list-else').innerHTML = rest.map(row).join('');
   $('h-pole').hidden = $('list-pole').hidden = !pole.length;
   $('h-else').hidden = $('list-else').hidden = !rest.length;
-  $('sites-none').hidden = mine.length + pole.length + rest.length > 0;
 }
 
 /** Save, rename and remove, under the site name. */
@@ -443,6 +441,81 @@ function scenarioSeries(sc: Scenario): Series {
   return sampleSeries(sc.site, horizonFor(sc.site), sc.timeMs, sc.timeMs + span, step);
 }
 
+// --- Site picker (Compare) -------------------------------------------------------
+// A different job from choosing: several sites at once, each toggled in or out
+// of the comparison at the landing date in the top bar.
+
+const atLanding = (site: Site) => state.compare.findIndex((c) => siteKey(c.site) === siteKey(site) && c.timeMs === state.timeMs);
+
+function pickerSites(): [string, Site[]][] {
+  const shown = allSites().filter((s) => siteMatches(s, filters));
+  return (
+    [
+      ['My sites', shown.filter((s) => s.group === 'mine')],
+      ['South pole, real terrain', shown.filter((s) => s.group === 'pole')],
+      ['Elsewhere, smooth horizon', shown.filter((s) => s.group === 'elsewhere')],
+      ['Unsaved pin', shown.filter((s) => s.group === 'custom')],
+    ] as [string, Site[]][]
+  ).filter(([, list]) => list.length);
+}
+
+function renderPicker() {
+  $('picker-when').textContent = `Landing ${dateTimeUTC(state.timeMs)}. Change the date in the top bar.`;
+  const groups = pickerSites();
+  const tile = (site: Site) => {
+    const v = viewAt(site, horizonFor(site), state.timeMs);
+    const both = Math.min(v.sun.fraction, v.earth.fraction);
+    const on = atLanding(site) >= 0;
+    const others = state.compare.filter((c) => siteKey(c.site) === siteKey(site) && c.timeMs !== state.timeMs).length;
+    return `<li><button type="button" class="pick" data-key="${siteKey(site)}" aria-pressed="${on}" title="${esc(site.name)}">
+      <span class="pick-no">${site.group === 'custom' ? 'Pin' : catalogueNo(site)}</span>
+      <svg class="pick-tick" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 6.5l2.6 2.6L10 3" /></svg>
+      <span class="pick-nm">${esc(site.name)}</span>
+      <span class="pick-ll">${coords(site)}${others ? ` · also on ${others} other date${others > 1 ? 's' : ''}` : ''}</span>
+      <span class="code" aria-hidden="true"><i class="sun ${fillClass(v.sun.fraction)}"></i><i class="earth ${fillClass(v.earth.fraction)}"></i><i class="both ${fillClass(both)}"></i></span>
+      <span class="vh">${on ? 'In the comparison' : 'Not in the comparison'}. Sun ${fillWord(v.sun.fraction)}, Earth ${fillWord(v.earth.fraction)}.</span>
+    </button></li>`;
+  };
+  $('picker').innerHTML = groups.length
+    ? groups.map(([title, list]) => `<h3>${title}</h3><ul class="pick-grid">${list.map(tile).join('')}</ul>`).join('')
+    : '<p class="empty">No sites match the filters.</p>';
+  const shown = groups.flatMap(([, l]) => l);
+  ($('pick-all') as HTMLButtonElement).disabled = shown.every((s) => atLanding(s) >= 0);
+  ($('pick-none') as HTMLButtonElement).disabled = !shown.some((s) => atLanding(s) >= 0);
+}
+
+function togglePick(site: Site) {
+  const i = atLanding(site);
+  if (i >= 0) {
+    state.compare = state.compare.filter((_, j) => j !== i);
+    statusText = `Removed ${site.group === 'custom' ? 'the pin' : catalogueNo(site)} from the comparison.`;
+    invalidate('compare');
+  } else addScenario(site);
+}
+
+$('picker').addEventListener('click', (e) => {
+  const b = (e.target as HTMLElement).closest<HTMLButtonElement>('.pick');
+  const site = b && allSites().find((s) => siteKey(s) === b.dataset.key);
+  if (site) togglePick(site);
+});
+$('pick-all').addEventListener('click', () => {
+  const add = pickerSites()
+    .flatMap(([, l]) => l)
+    .filter((s) => atLanding(s) < 0);
+  const room = MAX_SCENARIOS - state.compare.length;
+  state.compare = [...state.compare, ...add.slice(0, room).map((site) => ({ site, timeMs: state.timeMs }))];
+  statusText =
+    add.length > room ? `Added ${room}. Compare holds ${MAX_SCENARIOS} scenarios, so ${add.length - room} were left out.` : `Added ${add.length} sites.`;
+  invalidate('compare');
+});
+$('pick-none').addEventListener('click', () => {
+  const keys = new Set(pickerSites().flatMap(([, l]) => l.map(siteKey)));
+  const before = state.compare.length;
+  state.compare = state.compare.filter((c) => !(keys.has(siteKey(c.site)) && c.timeMs === state.timeMs));
+  statusText = `Removed ${before - state.compare.length} from the comparison.`;
+  invalidate('compare');
+});
+
 /** "Showing 3 of 7", the Clear button, and how many of the extra filters are on. */
 function renderFilterCount(shown: number, total: number) {
   const n = activeCount(filters);
@@ -456,7 +529,7 @@ function renderCompare() {
   const body = $('cmp-body');
   if (!state.compare.length) {
     renderFilterCount(0, 0);
-    body.innerHTML = `<p class="empty">Nothing pinned yet. Choose a site and a date, then use <b>Add to compare</b>. Pin the same site on two dates to see what a schedule slip costs, or two sites on one date to pick between them.</p>`;
+    body.innerHTML = `<p class="empty">Nothing to compare yet. Pick sites above, or use <b>Add to compare</b> on the Choose site and Analyse tabs.</p>`;
     return;
   }
   const all = state.compare.map((sc, i) => {
@@ -480,8 +553,8 @@ function renderCompare() {
     <thead><tr>
       <th scope="col">Site</th><th scope="col">Landing (UTC)</th>
       <th scope="col" class="lanes-col">Days after landing<span class="cmp-axis" id="cmp-axis"></span></th>
-      <th scope="col" class="num${mark('sun')}">Sun</th><th scope="col" class="num${mark('earth')}">Earth</th><th scope="col" class="num${mark('both')}">Both</th>
-      <th scope="col" class="num${mark('dark', 'ascending')}"><span class="gap-key"></span>Longest without Sun</th><th scope="col" class="num${mark('nolink', 'ascending')}"><span class="gap-key"></span>Longest without Earth</th><th scope="col"><span class="vh">Remove</span></th>
+      <th scope="col" class="num${mark('sun')}"><button type="button" class="th-sort" data-sort="sun">Sun</button></th><th scope="col" class="num${mark('earth')}"><button type="button" class="th-sort" data-sort="earth">Earth</button></th><th scope="col" class="num${mark('both')}"><button type="button" class="th-sort" data-sort="both">Both</button></th>
+      <th scope="col" class="num${mark('dark', 'ascending')}"><button type="button" class="th-sort" data-sort="dark"><span class="gap-key"></span>Longest without Sun</button></th><th scope="col" class="num${mark('nolink', 'ascending')}"><button type="button" class="th-sort" data-sort="nolink"><span class="gap-key"></span>Longest without Earth</button></th><th scope="col"><span class="vh">Remove</span></th>
     </tr></thead>
     <tbody>${rows
       .map(
@@ -625,7 +698,7 @@ function flush() {
 
   renderBar();
   if (has('tab', 'view')) renderStageView();
-  if (has('time', 'site', 'dem', 'rig', 'mine', 'filter', 'tab')) renderList();
+  if (has('time', 'site', 'dem', 'rig', 'mine')) renderList();
   if (has('site', 'dem', 'rig', 'mine')) renderHead();
   if (has('site', 'mine')) renderMineTools();
   if (has('time', 'site', 'dem', 'rig')) {
@@ -666,6 +739,7 @@ function flush() {
     sky?.setActive(false);
   }
   if (has('mine')) renderStageSites();
+  if (state.tab === 'compare' && has('compare', 'tab', 'dem', 'rig', 'filter', 'mine', 'time', 'site')) renderPicker();
   if (state.tab === 'compare' && has('compare', 'tab', 'dem', 'rig', 'filter', 'mine')) renderCompare();
   if (state.tab === 'about' && has('tab', 'dem')) renderAbout();
   if (has('time', 'site', 'tab', 'compare', 'view')) writeHash();
@@ -719,7 +793,7 @@ function readHash() {
       .split(';')
       .map((c) => c.split(',').map(Number))
       .filter((c) => c.length === 3 && c.every(Number.isFinite))
-      .slice(0, 12)
+      .slice(0, MAX_SCENARIOS)
       .map(([lat, lon, min]) => ({ site: findSite(lat, lon), timeMs: min * 60_000 }));
   }
 }
@@ -761,8 +835,7 @@ document.querySelector('.sites')!.addEventListener('click', (e) => {
   const b = (e.target as HTMLElement).closest<HTMLButtonElement>('.site');
   if (!b) return;
   const site = allSites().find((s) => siteKey(s) === b.dataset.key);
-  // On Compare the list adds a scenario instead of moving to the site.
-  if (site) state.tab === 'compare' ? addScenario(site) : select(site);
+  if (site) select(site);
 });
 
 $<HTMLFormElement>('goto').addEventListener('submit', (e) => {
@@ -801,7 +874,7 @@ function addScenario(site = state.site) {
   const dup = state.compare.some((c) => siteKey(c.site) === siteKey(site) && c.timeMs === state.timeMs);
   const name = site.no ? catalogueNo(site) : 'The custom site';
   if (dup) statusText = `${name} on that date is already in Compare. Change the date to add it again.`;
-  else if (state.compare.length >= 12) statusText = 'Compare holds 12 scenarios. Remove one first.';
+  else if (state.compare.length >= MAX_SCENARIOS) statusText = `Compare holds ${MAX_SCENARIOS} scenarios. Remove one first.`;
   else {
     state.compare = [...state.compare, { site, timeMs: state.timeMs }];
     statusText = `Added ${site.no ? name : 'the custom site'} on ${dateUTC(state.timeMs)} to Compare.`;
@@ -809,7 +882,6 @@ function addScenario(site = state.site) {
   invalidate('compare');
 }
 $('add').addEventListener('click', () => addScenario());
-$('cmp-add').addEventListener('click', () => addScenario());
 
 // --- My sites ------------------------------------------------------------------
 
@@ -819,7 +891,10 @@ function swapSite(key: string, next: Site) {
   state.compare = state.compare.map((c) => (siteKey(c.site) === key ? { ...c, site: next } : c));
 }
 
-function saveSite() {
+/** The name field serves two jobs: naming a pin as it is saved, and renaming a saved site. */
+let nameMode: 'save' | 'rename' = 'rename';
+
+function saveSite(name: string) {
   const s = state.site;
   if (mySites.length >= MAX_MY_SITES) {
     statusText = `My sites holds ${MAX_MY_SITES}. Remove one first.`;
@@ -827,7 +902,7 @@ function saveSite() {
     return;
   }
   const no = nextNumber(mySites);
-  const site = makeMySite(no, `My site ${String(no).padStart(2, '0')}`, s.lat, s.lon);
+  const site = makeMySite(no, name, s.lat, s.lon);
   if (!storeMySites([...mySites, site])) {
     statusText = 'This browser would not save the site. Its storage may be turned off or full.';
     invalidate('mine');
@@ -835,16 +910,18 @@ function saveSite() {
   }
   mySites = [...mySites, site];
   swapSite(siteKey(s), site);
-  statusText = `Saved as ${catalogueNo(site)}. Give it a name, or keep this one. Only this browser keeps it.`;
+  statusText = `Saved “${site.name}” as ${catalogueNo(site)}. Only this browser keeps it.`;
   invalidate('mine', 'site');
-  // Offer the name straight away, once the panel has redrawn.
-  requestAnimationFrame(() => requestAnimationFrame(startRename));
 }
 
-function startRename() {
-  if (state.site.group !== 'mine') return;
+function startName(mode: 'save' | 'rename') {
+  if (mode === 'rename' && state.site.group !== 'mine') return;
+  nameMode = mode;
   const input = $<HTMLInputElement>('rename-input');
-  input.value = state.site.name;
+  input.value = mode === 'rename' ? state.site.name : '';
+  $('rename-ok').textContent = mode === 'save' ? 'Save site' : 'Save name';
+  $('rename-label').textContent = mode === 'save' ? 'Name for this site' : 'New name for this site';
+  $('rename-err').hidden = true;
   $('s-name').hidden = true;
   $('mine-tools').hidden = true;
   $('rename').hidden = false;
@@ -855,7 +932,17 @@ function startRename() {
 function finishRename(save: boolean) {
   const s = state.site;
   const name = cleanName($<HTMLInputElement>('rename-input').value);
-  if (save && name && s.group === 'mine' && name !== s.name) {
+  if (save && !name) {
+    $('rename-err').textContent = nameMode === 'save' ? 'Give the site a name to save it.' : 'A saved site needs a name.';
+    $('rename-err').hidden = false;
+    $('rename-input').focus();
+    return;
+  }
+  if (save && nameMode === 'save' && s.group === 'custom') {
+    saveSite(name);
+    return;
+  }
+  if (save && s.group === 'mine' && name !== s.name) {
     const next = { ...s, name };
     const list = mySites.map((m) => (m.no === s.no ? next : m));
     if (storeMySites(list)) {
@@ -895,8 +982,8 @@ function removeSite(button: HTMLButtonElement) {
 
 $('mine-tools').addEventListener('click', (e) => {
   const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-mine]');
-  if (b?.dataset.mine === 'save') saveSite();
-  else if (b?.dataset.mine === 'rename') startRename();
+  if (b?.dataset.mine === 'save') startName('save');
+  else if (b?.dataset.mine === 'rename') startName('rename');
   else if (b?.dataset.mine === 'remove') removeSite(b);
 });
 $<HTMLFormElement>('rename').addEventListener('submit', (e) => {
@@ -924,40 +1011,75 @@ window.addEventListener('storage', (e) => {
 // --- Compare filters -----------------------------------------------------------
 
 const fv = <T extends HTMLElement = HTMLInputElement>(id: string) => $<T>(id);
-const NUMBER_FILTERS = ['minSun', 'minEarth', 'minBoth', 'maxDarkH', 'maxNoLinkH', 'latFrom', 'latTo', 'lonFrom', 'lonTo'] as const;
+const RANGE_NUMBERS = ['latFrom', 'latTo', 'lonFrom', 'lonTo'] as const;
+/** Sliders: the end that means "no limit" is 0 for a minimum and the top for a maximum. */
+const SLIDERS = { minSun: 'min', minEarth: 'min', minBoth: 'min', maxDarkH: 'max', maxNoLinkH: 'max' } as const;
+const segValue = (id: string) => fv(id).querySelector<HTMLElement>('[aria-pressed="true"]')?.dataset.v ?? 'all';
 
 function readFilterForm(): Filters {
-  const num = (id: string) => {
-    const raw = fv(`f-${id}`).value.trim();
-    const v = Number(raw);
-    return raw === '' || !Number.isFinite(v) ? null : v;
-  };
   const f: Filters = {
     ...NO_FILTERS,
-    source: fv<HTMLSelectElement>('f-source').value as Filters['source'],
-    hemi: fv<HTMLSelectElement>('f-hemi').value as Filters['hemi'],
-    terrainOnly: fv('f-terrain').checked,
+    source: segValue('f-source') as Filters['source'],
+    hemi: segValue('f-hemi') as Filters['hemi'],
+    terrainOnly: fv('f-terrain').getAttribute('aria-pressed') === 'true',
     sort: fv<HTMLSelectElement>('f-sort').value as Filters['sort'],
   };
-  for (const k of NUMBER_FILTERS) f[k] = num(k);
+  for (const k of RANGE_NUMBERS) {
+    const raw = fv(`f-${k}`).value.trim();
+    f[k] = raw === '' || !Number.isFinite(Number(raw)) ? null : Number(raw);
+  }
+  for (const [k, end] of Object.entries(SLIDERS) as [keyof typeof SLIDERS, 'min' | 'max'][]) {
+    const el = fv(`f-${k}`);
+    const v = Number(el.value);
+    f[k] = end === 'min' ? (v > 0 ? v : null) : v < Number(el.max) ? v : null;
+  }
   return f;
 }
 
+/** The value beside each slider: "any" at the no-limit end. */
+function writeSliderLabels() {
+  for (const [k, end] of Object.entries(SLIDERS) as [keyof typeof SLIDERS, 'min' | 'max'][]) {
+    const v = filters[k];
+    fv(`o-${k}`).textContent = v === null ? 'any' : end === 'min' ? `${v}%` : v === 0 ? '0 h' : hours(v);
+  }
+}
+
 function writeFilterForm() {
-  fv<HTMLSelectElement>('f-source').value = filters.source;
-  fv<HTMLSelectElement>('f-hemi').value = filters.hemi;
-  fv('f-terrain').checked = filters.terrainOnly;
+  for (const id of ['f-source', 'f-hemi'] as const) {
+    const v = id === 'f-source' ? filters.source : filters.hemi;
+    fv(id).querySelectorAll<HTMLElement>('[data-v]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
+  }
+  fv('f-terrain').setAttribute('aria-pressed', String(filters.terrainOnly));
   fv<HTMLSelectElement>('f-sort').value = filters.sort;
-  for (const k of NUMBER_FILTERS) fv(`f-${k}`).value = filters[k] === null ? '' : String(filters[k]);
+  for (const k of RANGE_NUMBERS) fv(`f-${k}`).value = filters[k] === null ? '' : String(filters[k]);
+  for (const [k, end] of Object.entries(SLIDERS) as [keyof typeof SLIDERS, 'min' | 'max'][]) {
+    const el = fv(`f-${k}`);
+    el.value = String(filters[k] ?? (end === 'min' ? 0 : el.max));
+  }
+  writeSliderLabels();
 }
 
 const onFilter = () => {
   filters = readFilterForm();
+  writeSliderLabels();
   storeFilters(filters);
   invalidate('filter');
 };
 $('filters').addEventListener('input', onFilter);
 $('filters').addEventListener('change', onFilter);
+$('filters').addEventListener('click', (e) => {
+  const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button');
+  if (!b) return;
+  if (b.dataset.v) {
+    b.parentElement!.querySelectorAll('[data-v]').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+    onFilter();
+  } else if (b.id === 'f-terrain') {
+    b.setAttribute('aria-pressed', String(b.getAttribute('aria-pressed') !== 'true'));
+    onFilter();
+  }
+});
+// The sort sits above the table, outside the filter form.
+$('f-sort').addEventListener('change', onFilter);
 $<HTMLFormElement>('filters').addEventListener('submit', (e) => e.preventDefault());
 $('f-clear').addEventListener('click', () => {
   // Clearing keeps the chosen order: sorting is not a filter.
@@ -969,6 +1091,12 @@ $('f-clear').addEventListener('click', () => {
 
 $('cmp-body').addEventListener('click', (e) => {
   const t = e.target as HTMLElement;
+  const sortBy = t.closest<HTMLButtonElement>('[data-sort]');
+  if (sortBy) {
+    fv<HTMLSelectElement>('f-sort').value = filters.sort === sortBy.dataset.sort ? 'added' : sortBy.dataset.sort!;
+    onFilter();
+    return;
+  }
   const open = t.closest<HTMLButtonElement>('[data-open]');
   const remove = t.closest<HTMLButtonElement>('[data-remove]');
   if (open) {
