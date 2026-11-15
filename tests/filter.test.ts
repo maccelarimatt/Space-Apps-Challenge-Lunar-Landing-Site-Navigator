@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { NO_FILTERS, activeCount, siteMatches, sorter, summaryMatches, type Filters } from '../src/compare-filter';
+import { NO_FILTERS, activeCount, hasTerrain, siteMatches, sorter, summaryMatches, type Filters } from '../src/compare-filter';
 import type { Summary } from '../src/astro/windows';
 import type { Site } from '../src/sites';
 
@@ -12,6 +12,16 @@ describe('Compare filters', () => {
     expect(siteMatches(site(-89, 10), NO_FILTERS)).toBe(true);
     expect(summaryMatches(sum({}), NO_FILTERS)).toBe(true);
     expect(activeCount(NO_FILTERS)).toBe(0);
+  });
+
+  it('asks the terrain grid, not a latitude, whether a site has real terrain', () => {
+    // The grid is square: its edge is near 80°S on the 0° meridian, but its corners reach about 76°S at 45°E.
+    expect(hasTerrain(site(-80.13, 1.44))).toBe(true);
+    expect(hasTerrain(site(-79.9, 1))).toBe(false);
+    expect(hasTerrain(site(-78, 45))).toBe(true);
+    expect(hasTerrain(site(-78, 0))).toBe(false);
+    expect(hasTerrain(site(-75, 45))).toBe(false);
+    expect(hasTerrain(site(85, 45))).toBe(false);
   });
 
   it('filters by source, hemisphere and terrain', () => {

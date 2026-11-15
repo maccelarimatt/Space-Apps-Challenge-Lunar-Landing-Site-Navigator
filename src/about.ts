@@ -14,7 +14,20 @@ const mi = (s: string) => `<mi>${s}</mi>`;
 const mo = (s: string) => `<mo>${s}</mo>`;
 const mn = (s: string) => `<mn>${s}</mn>`;
 // MathML Core draws only upright or italic letters, so bold vectors use the Unicode bold alphabet.
-const BOLD: Record<string, string> = { d: '𝐝', r: '𝐫', u: '𝐮', n: '𝐧', e: '𝐞' };
+const BOLD: Record<string, string> = {
+  d: '𝐝',
+  r: '𝐫',
+  u: '𝐮',
+  n: '𝐧',
+  e: '𝐞',
+  p: '𝐩',
+  x: '𝐱',
+  y: '𝐲',
+  s: '𝐬',
+  m: '𝐦',
+  M: '𝐌',
+  N: '𝐍',
+};
 const bold = (s: string) => `<mi>${BOLD[s]}</mi>`;
 const vec = (s: string) => `<mover accent="true">${bold(s)}<mo>^</mo></mover>`;
 const sub = (a: string, b: string) => `<msub>${a}${b}</msub>`;
@@ -72,6 +85,97 @@ const EQ = {
   view: block(mi('f'), mo('&gt;'), mn('0.5')),
   power: block(mi('P'), paren(mi('t')), mo('='), mi('S'), gap, sub(mi('A'), mi('p')), gap, mi('η'), gap, mi('f'), paren(mi('t'))),
   battery: block(mi('E'), mo('='), sub(mi('P'), mi('need')), gap, sub(mi('T'), mi('short'))),
+};
+
+// The rest of the arithmetic, for the "Every calculation" section.
+const sp = `<mspace width="1.2em"/>`;
+const sum = (under: string) => `<munder><mo>∑</mo>${row(under)}</munder>`;
+const iv = (...p: string[]) => row(mo('['), ...p, mo(']'));
+const floor = (...p: string[]) => row(mo('⌊'), ...p, mo('⌋'));
+const k = mi('k');
+const fk = (b: string) => sub(mi('f'), row(mi(b), mo(','), k));
+
+const EQ2 = {
+  pole: block(vec('p'), mo('='), paren(fn('cos'), mi('δ'), gap, fn('cos'), mi('α'), mo(','), fn('cos'), mi('δ'), gap, fn('sin'), mi('α'), mo(','), fn('sin'), mi('δ'))),
+  node: block(vec('N'), mo('='), paren(mo('−'), fn('sin'), mi('α'), mo(','), fn('cos'), mi('α'), mo(','), mn('0'))),
+  axes: block(vec('x'), mo('='), fn('cos'), mi('W'), gap, vec('N'), mo('+'), fn('sin'), mi('W'), gap, paren(vec('p'), mo('×'), vec('N')), mo(','), sp, vec('y'), mo('='), vec('p'), mo('×'), vec('x')),
+  turn: block(sub(bold('r'), mi('Sun')), mo('='), mi('a'), gap, bold('M'), paren(bold('s'), mo('−'), bold('m')), mo(','), sp, sub(bold('r'), mi('Earth')), mo('='), mo('−'), mi('a'), gap, bold('M'), bold('m')),
+  up: block(vec('u'), mo('='), paren(fn('cos'), mi('φ'), gap, fn('cos'), mi('λ'), mo(','), fn('cos'), mi('φ'), gap, fn('sin'), mi('λ'), mo(','), fn('sin'), mi('φ'))),
+  east: block(vec('e'), mo('='), paren(mo('−'), fn('sin'), mi('λ'), mo(','), fn('cos'), mi('λ'), mo(','), mn('0'))),
+  north: block(vec('n'), mo('='), paren(mo('−'), fn('sin'), mi('φ'), gap, fn('cos'), mi('λ'), mo(','), mo('−'), fn('sin'), mi('φ'), gap, fn('sin'), mi('λ'), mo(','), fn('cos'), mi('φ'))),
+  q: block(mi('q'), mo('='), mn('2'), mi('R'), gap, fn('tan'), frac(row(mn('90°'), mo('+'), mi('φ')), mn('2'))),
+  cell: block(
+    mi('col'),
+    mo('='),
+    sub(mi('c'), mn('0')),
+    mo('+'),
+    frac(row(mi('q'), gap, fn('sin'), mi('λ')), mi('g')),
+    mo(','),
+    sp,
+    mi('row'),
+    mo('='),
+    sub(mi('c'), mn('0')),
+    mo('−'),
+    frac(row(mi('q'), gap, fn('cos'), mi('λ')), mi('g')),
+  ),
+  mean: block(mi('z'), mo('='), fn('round'), paren(frac(mn('1'), mn('18')), sum(row(mn('3'), mo('×'), mn('3'))), sub(mi('h'), mi('ij')))),
+  bilinear: block(
+    mi('z'),
+    mo('='),
+    paren(mn('1'), mo('−'), mi('a')),
+    paren(mn('1'), mo('−'), mi('b')),
+    sub(mi('z'), mn('00')),
+    mo('+'),
+    mi('a'),
+    paren(mn('1'), mo('−'), mi('b')),
+    sub(mi('z'), mn('10')),
+    mo('+'),
+    paren(mn('1'), mo('−'), mi('a')),
+    mi('b'),
+    sub(mi('z'), mn('01')),
+    mo('+'),
+    mi('a'),
+    mi('b'),
+    sub(mi('z'), mn('11')),
+  ),
+  walk: block(bold('p'), paren(mi('s')), mo('='), fn('cos'), mi('θ'), gap, vec('u'), mo('+'), fn('sin'), mi('θ'), gap, paren(fn('cos'), mi('A'), gap, vec('n'), mo('+'), fn('sin'), mi('A'), gap, vec('e'))),
+  step: block(
+    sub(mi('s'), mn('1')),
+    mo('='),
+    mn('120 m'),
+    mo(','),
+    sp,
+    sub(mi('s'), row(k, mo('+'), mn('1'))),
+    mo('='),
+    sub(mi('s'), k),
+    mo('+'),
+    fn('max'),
+    paren(mn('120 m'), mo(','), mn('0.005'), gap, sub(mi('s'), k)),
+  ),
+  limb: block(mi('H'), paren(mi('A')), mo('≥'), mo('−'), fn('arccos'), frac(mi('R'), sub(mi('r'), mi('o'))), mo(','), sp, sub(mi('H'), mi('sphere')), mo('='), mo('−'), fn('arccos'), frac(mi('R'), row(mi('R'), mo('+'), mi('m')))),
+  azim: block(
+    mi('H'),
+    paren(mi('A')),
+    mo('='),
+    paren(mn('1'), mo('−'), mi('t')),
+    gap,
+    sub(mi('H'), mi('i')),
+    mo('+'),
+    mi('t'),
+    gap,
+    sub(mi('H'), row(mi('i'), mo('+'), mn('1'))),
+    mo(','),
+    sp,
+    mi('i'),
+    mo('='),
+    floor(frac(mi('A'), mn('0.5°'))),
+  ),
+  share: block(sub(mi('F'), mi('B')), mo('='), frac(mn('1'), mi('N')), sum(k), iv(fk('B'), mo('&gt;'), mn('0.5')), mo(','), sp, sub(mi('F'), mi('both')), mo('='), frac(mn('1'), mi('N')), sum(k), iv(fk('Sun'), mo('&gt;'), mn('0.5')), iv(fk('Earth'), mo('&gt;'), mn('0.5'))),
+  longest: block(sub(mi('L'), mi('B')), mo('='), mi('Δ'), mi('t'), gap, `<munder><mo movablelimits="false">max</mo>${row(mi('runs'))}</munder>`, paren(mi('j'), mo('−'), mi('i'))),
+  dt: block(mi('Δ'), mi('t'), mo('='), fn('max'), paren(mn('30 min'), mo(','), gap, fn('round'), paren(frac(mi('T'), row(mn('700'), mo('×'), mn('30 min')))), mo('×'), mn('30 min'))),
+  day: block(mi('n'), mo('='), floor(frac(row(mi('t'), mo('−'), sub(mi('t'), mi('ref'))), mi('P'))), mo(','), sp, mi('h'), mo('='), mi('e'), mo('−'), mi('H'), paren(mi('A')), mo('+'), mi('ρ')),
+  cover: block(mi('C'), mo('='), frac(mn('1'), mi('N')), sum(k), iv(mi('S'), gap, sub(mi('A'), mi('p')), gap, mi('η'), gap, fk('Sun'), mo('≥'), sub(mi('P'), mi('need')))),
+  check: block(mi('I'), mo('='), frac(mn('1'), mi('N')), sum(k), sub(mi('f'), k), mo(','), sp, mi('V'), mo('='), frac(mn('1'), mi('N')), sum(k), iv(sub(mi('f'), k), mo('&gt;'), mn('0'))),
 };
 
 // --- Static diagrams ---------------------------------------------------------
@@ -276,8 +380,9 @@ const comparisonRows = GLASER_TABLE_2.map(
 const SECTIONS: [string, string][] = [
   ['ab-top', 'Overview'],
   ['ab-how', 'How it works'],
+  ['ab-full', 'Every calculation'],
   ['ab-checks', 'How it was checked'],
-  ['ab-limits', 'Limits'],
+  ['ab-limits', 'Constraints'],
   ['ab-sources', 'Sources'],
   ['ab-data', 'Your data'],
   ['ab-ai', 'Use of AI'],
@@ -369,7 +474,7 @@ export const aboutHtml = `
         <p class="step-no" aria-hidden="true">4</p>
         <div>
           <h3>Windows, power and batteries</h3>
-          <p>Repeating steps 1 to 3 every 30 minutes gives the timelines. A body counts as in view while more than half of its disc shows. The countdowns under the site (“until it sets”) run until the last of the disc disappears, found in 30-minute steps and then narrowed to the minute.</p>
+          <p>Repeating steps 1 to 3 every 30 minutes gives the timelines. Compare uses longer steps for longer missions, set out under <a href="#" data-goto="ab-full">Every calculation</a>. A body counts as in view while more than half of its disc shows. The countdowns under the site (“until it sets”) run until the last of the disc disappears, found in 30-minute steps and then narrowed to the minute.</p>
           <div class="eq">${EQ.view}${EQ.power}${EQ.battery}</div>
           <dl class="where">
             <dt>${inline(mi('S'))}</dt><dd>1361 W/m², the nominal sunlight at Earth’s average distance from the Sun ${ref('s-5')}. It is used as it stands, without correcting for the Moon’s changing distance from the Sun.</dd>
@@ -378,6 +483,96 @@ export const aboutHtml = `
           </dl>
         </div>
       </div>
+    </section>
+
+    <section id="ab-full">
+      <h2>Every calculation</h2>
+      <p class="intro">The four steps above give the ideas. This section lists the rest of the arithmetic the app runs, so that no figure on screen comes from a calculation this page does not show. Symbols carry over from above. A condition in square brackets, such as ${inline(iv(mi('f'), mo('&gt;'), mn('0.5')))}, counts 1 when it is true and 0 when it is false.</p>
+
+      <h3>A. Turning the Moon to face the right way</h3>
+      <p>Astronomy Engine ${ref('s-6')} gives the Sun and the Moon as seen from Earth’s centre, along fixed axes in the sky. Its model of the Moon’s rotation gives the direction of the Moon’s north pole and how far the Moon has turned. Those build the Moon’s own axes, which turn the Sun and Earth into the Moon’s frame for step 1.</p>
+      <div class="eq">${EQ2.pole}${EQ2.node}${EQ2.axes}${EQ2.turn}</div>
+      <dl class="where">
+        <dt>${inline(mi('α'), mo(','), mi('δ'))}</dt><dd>Right ascension and declination of the Moon’s north pole, from the library’s <code>RotationAxis</code></dd>
+        <dt>${inline(mi('W'))}</dt><dd>How far the Moon’s prime meridian has turned, from the same call</dd>
+        <dt>${inline(bold('s'), mo(','), bold('m'))}</dt><dd>The Sun and the Moon seen from Earth’s centre, in astronomical units. The Sun’s position is corrected for aberration, an option the library offers.</dd>
+        <dt>${inline(bold('M'))}</dt><dd>The matrix whose rows are ${inline(vec('x'), mo(','), vec('y'), mo(','), vec('p'))}. It turns a vector into the Moon’s frame.</dd>
+        <dt>${inline(mi('a'))}</dt><dd>The astronomical unit in kilometres ${ref('s-5')}</dd>
+      </dl>
+      <p>Earth’s face in the sky view is turned the same way, using Earth’s own pole and prime meridian from the same library, and lit from the Sun’s direction. The Sun and Earth lines on the globe use these vectors too. They are drawings and feed no figure.</p>
+
+      <h3>B. Up, north and east at the site</h3>
+      <div class="eq">${EQ2.up}${EQ2.east}${EQ2.north}</div>
+      <dl class="where">
+        <dt>${inline(mi('φ'), mo(','), mi('λ'))}</dt><dd>The site’s latitude, north positive, and longitude, east positive</dd>
+      </dl>
+
+      <h3>C. Reading the terrain</h3>
+      <p>The elevation grid is a polar stereographic map, the projection of the LOLA product ${ref('s-1')}. A site’s place on it is found like this, and a site that falls outside the grid gets the smooth sphere.</p>
+      <div class="eq">${EQ2.q}${EQ2.cell}</div>
+      <dl class="where">
+        <dt>${inline(mi('q'))}</dt><dd>Distance from the pole on the map</dd>
+        <dt>${inline(mi('g'), mo(','), sub(mi('c'), mn('0')))}</dt><dd>240 m per cell, and 1265.5, the centre of the 2532 by 2532 grid</dd>
+      </dl>
+      <p>Each 240 m cell is the mean of nine 80 m cells from the source, which stores heights in half metres, rounded to a whole metre. Two cells are trimmed from each edge of the source first, so the grid divides by three with the pole at its centre. Between cell centres, heights are blended from the four nearest cells.</p>
+      <div class="eq">${EQ2.mean}${EQ2.bilinear}</div>
+      <dl class="where">
+        <dt>${inline(sub(mi('h'), mi('ij')))}</dt><dd>The nine source heights, in half metres</dd>
+        <dt>${inline(mi('a'), mo(','), mi('b'))}</dt><dd>How far the point sits across and down between the four cell centres, from 0 to 1</dd>
+      </dl>
+      <p>The search for the skyline in step 2 visits these points along compass direction ${inline(mi('A'))}, stopping at 400 km or at the edge of the grid, whichever comes first.</p>
+      <div class="eq">${EQ2.walk}${EQ2.step}${EQ2.limb}${EQ2.azim}</div>
+      <dl class="where">
+        <dt>${inline(sub(mi('s'), k))}</dt><dd>Distance of the ${inline(k)}th point along the surface</dd>
+        <dt>${inline(sub(mi('H'), mi('sphere')))}</dt><dd>The skyline everywhere outside the grid, a smooth sphere seen from the mast height ${inline(mi('m'))}. Inside the grid, the skyline is never lower than that sphere’s edge, unless the site is below the sphere, such as a crater floor.</dd>
+        <dt>${inline(sub(mi('H'), mi('i')))}</dt><dd>The skyline stored for the 720 directions, half a degree apart. Between two of them it is read off a straight line, with ${inline(mi('t'))} from 0 to 1.</dd>
+      </dl>
+
+      <h3>D. Time steps, totals and gaps</h3>
+      <p>Every timeline samples the chosen period at regular times ${inline(sub(mi('t'), k), mo('='), sub(mi('t'), mn('0')), mo('+'), k, mi('Δ'), mi('t'))}. The first sample is rounded down to a whole multiple of ${inline(mi('Δ'), mi('t'))} counted from 1 January 1970 UTC, so it can fall up to one step before the chosen moment. That lets every site share the same Sun and Earth positions.</p>
+      <div class="eq">${EQ2.share}${EQ2.longest}</div>
+      <dl class="where">
+        <dt>${inline(sub(mi('F'), mi('B')))}</dt><dd>Share of the period with the Sun or Earth in view. Multiplied by the length of the period, it gives the hours shown on Compare.</dd>
+        <dt>${inline(sub(mi('L'), mi('B')))}</dt><dd>The longest stretch without it. ${inline(mi('i'), mo('≤'), k, mo('&lt;'), mi('j'))} runs over every unbroken run of samples with ${inline(fk('B'), mo('≤'), mn('0.5'))}.</dd>
+        <dt>${inline(mi('N'))}</dt><dd>The number of samples</dd>
+      </dl>
+      <p>The step depends on where the figure appears.</p>
+      <ul class="plain">
+        <li><b>Analyse and the site figures:</b> every 30 minutes over the next 29.53 days</li>
+        <li><b>Compare:</b> the step grows with the mission length ${inline(mi('T'))}, so each row stays near 700 samples. That gives 30 minutes for 7 and 14 days, 1 hour for one lunar day, 3 hours for 90 days and 12.5 hours for a year.</li>
+        <li><b>A year of lunar days:</b> every 3 hours, over 13 lunar days, six before and six after the current one</li>
+      </ul>
+      <div class="eq">${EQ2.dt}</div>
+      <p>The rows of the year plot are numbered by mean lunar day, and each line plots the height of the disc’s top edge above the skyline.</p>
+      <div class="eq">${EQ2.day}</div>
+      <dl class="where">
+        <dt>${inline(mi('P'))}</dt><dd>29.530588853 days, the mean time from one new moon to the next</dd>
+        <dt>${inline(sub(mi('t'), mi('ref')))}</dt><dd>6 January 2000, 18:14 UTC, a new moon. It only sets where each row starts.</dd>
+        <dt>${inline(mi('h'))}</dt><dd>Height of the top edge above the skyline. It is negative while the body is hidden, and the plot draws it flat there.</dd>
+      </dl>
+      <p>The countdowns walk forward in 30-minute steps until any part of the disc appears or the last of it goes. They then halve the last step again and again until the moment is known to within a minute. They look up to 60 days ahead.</p>
+
+      <h3>E. Power</h3>
+      <p>The panel makes ${inline(mi('S'), gap, sub(mi('A'), mi('p')), gap, mi('η'))} in full Sun, and that times the share of the disc in view now. The share of time it covers the need is</p>
+      <div class="eq">${EQ2.cover}</div>
+      <p>and ${inline(sub(mi('T'), mi('short')))} in step 4 is the longest unbroken run of samples that fail that test, times ${inline(mi('Δ'), mi('t'))}.</p>
+
+      <h3>F. The published comparison</h3>
+      <p>For the comparison with Gläser et al. ${ref('s-7')}, the tool samples every hour from 1 January 2017 to 1 January 2037 with the panels 2 m above the ground. Average illumination is the mean share of the Sun’s disc in view. Solar visibility is the share of hours with any of it in view. The longest shadow is the longest run of hours with none of it in view.</p>
+      <div class="eq">${EQ2.check}</div>
+      <dl class="where">
+        <dt>${inline(mi('I'), mo(','), mi('V'))}</dt><dd>Average illumination and solar visibility, over ${inline(mi('N'))} hourly samples of the Sun’s share in view ${inline(sub(mi('f'), k))}</dd>
+      </dl>
+
+      <h3>G. Constants</h3>
+      <dl class="where">
+        <dt>${inline(mi('R'))}</dt><dd>1737.4 km, the reference radius of the LOLA grid ${ref('s-1')}</dd>
+        <dt>${inline(sub(mi('R'), mi('Sun')))}</dt><dd>695 700 km ${ref('s-5')}</dd>
+        <dt>${inline(sub(mi('R'), mi('Earth')))}</dt><dd>6378.137 km, Earth’s equatorial radius, as JPL Horizons records it ${ref('s-4')}</dd>
+        <dt>${inline(mi('a'))}</dt><dd>149 597 870.7 km ${ref('s-5')}</dd>
+        <dt>${inline(mi('S'))}</dt><dd>1361 W/m² ${ref('s-5')}</dd>
+        <dt>${inline(mi('P'), mo(','), sub(mi('t'), mi('ref')))}</dt><dd>Standard values for the mean lunar month and a known new moon. They are not taken from the sources listed below, and they only number the rows of the year plot.</dd>
+      </dl>
     </section>
 
     <section id="ab-checks">
@@ -417,15 +612,169 @@ export const aboutHtml = `
     </section>
 
     <section id="ab-limits">
-      <h2>Limits</h2>
+      <h2>Constraints</h2>
+      <p class="intro">Selene’s Compass is a planning and teaching aid, built by one person for a hackathon. It is not a flight tool. NASA has not reviewed or endorsed it, and none of its answers has been compared with what a lander actually saw on the Moon. Use it to narrow down sites and dates and to see the trade-offs between them, then confirm anything that matters with mission-grade analysis. This section sets out everything known to limit its answers and, where it is known, which way each one pushes the numbers.</p>
+
+      <div class="scope">
+        <div>
+          <h3>What it can tell you</h3>
+          <ul class="plain">
+            <li>Where the Sun and Earth sit against the skyline at any moment, as a 240 m terrain model draws that skyline</li>
+            <li>Roughly what share of a period each one is in view, and the longest stretch without it</li>
+            <li>When the Sun or Earth will next set or rise, within the limits below</li>
+            <li>How different sites and dates compare on those measures</li>
+            <li>A first estimate of solar power and battery size for an ideal panel</li>
+          </ul>
+        </div>
+        <div>
+          <h3>What it cannot tell you</h3>
+          <ul class="plain">
+            <li>Whether a site is safe to land on</li>
+            <li>How hot or cold the site gets</li>
+            <li>Whether a ground station on Earth can hear the lander at a given moment</li>
+            <li>What a real, fixed solar panel will produce</li>
+            <li>Anything about the ground within about 120 m of the lander</li>
+            <li>Where water ice or other resources are</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>1. Where there is real terrain</h3>
+      <ol class="cons">
+        <li>
+          <p><b>Only the south polar cap has terrain.</b> The elevation grid covers about 80° S to the pole. It is square, so its corners reach about 76° S at 45°, 135°, 225° and 315° E. Everywhere else, including the whole north polar region, the horizon is a perfectly smooth sphere, and the site is placed on that sphere at a height of zero. The line under the horizon strip on Analyse says which is in use, “terrain from LOLA” or “smooth sphere”, and the Real terrain only filter on Compare picks out sites inside the grid.</p>
+          <p class="effect"><span class="tag">Effect</span> It can go either way. In a crater or valley, such as Apollo 17’s Taurus-Littrow valley, the real skyline is higher, so the Sun and Earth really rise later and set earlier than shown. On a summit the real skyline can sit below level, so they really stay up longer. The error is smallest on open plains when the Sun is high.</p>
+        </li>
+        <li>
+          <p><b>Sites near the edge of the grid lose part of their skyline.</b> The search for the skyline stops where the grid ends. For a site between 80° S and about 81.5° S, the terrain to the north is missing, so the skyline in those directions falls back to the smooth sphere. LLS 09, the IM-1 landing site, sits in this band, and Site details says so for any site that does.</p>
+          <p class="effect"><span class="tag">Effect</span> The skyline to the north is too low. From this band the Sun at its highest stands toward the north, and so does Earth on the side of the Moon that faces it, so they can be shown in view when hills beyond the edge would hide them.</p>
+        </li>
+        <li>
+          <p><b>No terrain if the download fails.</b> If the terrain file cannot be loaded, every site falls back to the smooth sphere and the site panel says so.</p>
+        </li>
+      </ol>
+
+      <h3>2. The terrain model itself</h3>
+      <ol class="cons">
+        <li>
+          <p><b>A model, not the ground.</b> The heights come from NASA’s LOLA elevation grid ${ref('s-1')}. Like any elevation map it has errors of its own, and this tool cannot see or correct them. No source read for this page states its accuracy, so none is quoted here.</p>
+          <p class="effect"><span class="tag">Effect</span> Unknown in size and direction. Any error in the hills that form the skyline moves the skyline with it.</p>
+        </li>
+        <li>
+          <p><b>Coarsened to load quickly.</b> The source grid has 80 m cells. This tool averages them in blocks of 3 by 3 into 240 m cells and rounds each height to the nearest metre. Averaging lowers peaks and fills in dips.</p>
+          <p class="effect"><span class="tag">Effect</span> Narrow crests come out lower and blunter than they are. Against Gläser et al. ${ref('s-7')}, two published crest points came out ${f1(GLASER_TABLE_2[0].published.avg - GLASER_TABLE_2[0].ours.avg)} and ${f1(GLASER_TABLE_2[2].published.avg - GLASER_TABLE_2[2].ours.avg)} percentage points less sunlit here. At Connecting Ridge C1 the longest shadow came out at ${GLASER_TABLE_2[0].ours.shadowH} h, against ${GLASER_TABLE_2[0].published.shadowH} h published.</p>
+        </li>
+        <li>
+          <p><b>Smooth between grid points.</b> Heights between cells are blended from the four nearest, so a cliff comes out as a slope. Boulders, small craters and anything else smaller than a cell are absent.</p>
+        </li>
+        <li>
+          <p><b>The ground under the lander is the weakest part.</b> The site’s own height comes from the same smoothed grid, so on a slope or a narrow crest it can sit higher or lower than the real ground. The skyline search starts 120 m from the site, so nearby boulders, the slope the lander stands on and the lander’s own hardware are never counted.</p>
+          <p class="effect"><span class="tag">Effect</span> It can go either way. A lander on a narrow crest that the grid sets too low sees too little sky. One in a hollow that the grid sets too high sees too much.</p>
+        </li>
+        <li>
+          <p><b>Gaps in the search.</b> The skyline is traced in 720 directions, half a degree apart, and filled in between them. Along each direction the steps are 120 m apart near the site and widen to 0.5% of the distance beyond 24 km, which is 2 km apart at the 400 km limit. Terrain beyond 400 km is not searched, though at the pole the edge of the grid usually comes first.</p>
+          <p class="effect"><span class="tag">Effect</span> A narrow peak between two directions, or a thin ridge between two distant steps, can be missed. That lowers the skyline, so the Sun or Earth can be shown in view when it is just hidden.</p>
+        </li>
+        <li>
+          <p><b>A sphere, not the Moon’s real shape.</b> The geometry uses a perfect sphere of radius 1737.4 km. “Level” and the elevation angles on screen are measured from that sphere, not from the tilted ground at the site. The lander’s own tilt is not modelled.</p>
+          <p class="effect"><span class="tag">Effect</span> The angles describe the sky correctly but say nothing about where a tilted lander’s panels and antenna actually point.</p>
+        </li>
+      </ol>
+
+      <h3>3. Sun and Earth positions</h3>
+      <ol class="cons">
+        <li>
+          <p><b>A compact model, checked for one month.</b> Positions come from Astronomy Engine ${ref('s-6')}, which uses series approximations rather than NASA’s full numerical ephemerides. They agree with JPL Horizons ${ref('s-4')} to within ${HORIZONS_WORST_DEG.earth}° at two sites, every 6 hours for 30 days from 14 March 2027.</p>
+          <p class="effect"><span class="tag">Effect</span> Negligible near the dates that were checked. The date picker accepts any year, but dates far from the present have not been checked, and the size of the error there is not known.</p>
+        </li>
+        <li>
+          <p><b>Ideal discs and a straight skyline.</b> The Sun and Earth are perfect spheres, Earth with its equatorial radius, and the skyline is treated as a straight line across the width of one disc. Earth is nearly 2° across, so a jagged ridge can cover more or less of it than that straight line suggests.</p>
+        </li>
+        <li>
+          <p><b>Eclipses are ignored.</b> During a lunar eclipse Earth passes in front of the Sun as seen from the Moon, and cuts some or all of its light for a few hours. The tool does not model this.</p>
+          <p class="effect"><span class="tag">Effect</span> Eclipse hours are counted as full sunlight, so sunlight and power come out slightly high in any period that contains one.</p>
+        </li>
+        <li>
+          <p><b>UTC only.</b> Every date and time is entered and shown in Coordinated Universal Time.</p>
+        </li>
+      </ol>
+
+      <h3>4. How “in view” is counted</h3>
+      <ol class="cons">
+        <li>
+          <p><b>A chosen threshold.</b> A body counts as in view while more than half of its disc is above the skyline. That is this tool’s choice, not a standard. The countdowns under the site use a different rule. They run until the last sliver disappears.</p>
+          <p class="effect"><span class="tag">Effect</span> At grazing angles, which are common at the pole, the two rules can disagree by an hour or more. A total and a countdown are not directly comparable.</p>
+        </li>
+        <li>
+          <p><b>Area, not light.</b> The share of the disc in view is a share of its area. The Sun’s edge is dimmer than its centre, and the tool does not model this.</p>
+          <p class="effect"><span class="tag">Effect</span> When only a sliver of the Sun shows, its light is overestimated. When only a sliver is hidden, its light is slightly underestimated.</p>
+        </li>
+        <li>
+          <p><b>Time steps.</b> Analyse samples every 30 minutes. Compare uses 30 minutes for missions up to 14 days, then longer steps: 1 hour for one lunar day, 3 hours for 90 days and 12.5 hours for a year. The year plot uses 3 hours. The first sample can fall up to one step before the chosen moment. Countdowns are narrowed to about a minute, but they look at most 60 days ahead and show “Over 60 d” beyond that.</p>
+          <p class="effect"><span class="tag">Effect</span> A window or gap shorter than one step can be missed, and each start and end can be out by up to one step. On a one-year Compare that is 12.5 hours, so its longest stretches are rough. A setting and rising that both fall inside one 30-minute step can be missed by the countdown too.</p>
+        </li>
+      </ol>
+
+      <h3>5. Solar power and batteries</h3>
+      <ol class="cons">
+        <li>
+          <p><b>An ideal panel.</b> The calculator assumes a panel that always turns to face the Sun squarely. Many landers have fixed panels. At the pole the Sun stays near the horizon, so a panel lying flat gets almost nothing and an upright one depends on which way it faces. Fixed panels are not modelled.</p>
+          <p class="effect"><span class="tag">Effect</span> For a fixed panel, real output is lower, often far lower.</p>
+        </li>
+        <li>
+          <p><b>Constant sunlight.</b> The nominal 1361 W/m² ${ref('s-5')} is used at all times. The real figure changes by a few percent over the year as the distance to the Sun changes.</p>
+          <p class="effect"><span class="tag">Effect</span> A few percent high or low depending on the time of year.</p>
+        </li>
+        <li>
+          <p><b>Losses left out.</b> Dust on the panels, heat (hot cells are less efficient), ageing, wiring and conversion losses, and shade from the lander itself are not included. Neither is light reflected from nearby slopes.</p>
+          <p class="effect"><span class="tag">Effect</span> All but the last make real output lower than shown.</p>
+        </li>
+        <li>
+          <p><b>The battery figure is a floor.</b> It is the power needed multiplied by the longest shortfall in the next 29.5 days. It leaves out the battery’s own losses, the part of a battery that can safely be used, the extra heating needed in the cold, and any longer shortfall outside that window.</p>
+          <p class="effect"><span class="tag">Effect</span> A real battery would need to be larger.</p>
+        </li>
+      </ol>
+
+      <h3>6. The radio link</h3>
+      <ol class="cons">
+        <li>
+          <p><b>Line of sight only.</b> “Earth in view” means more than half of Earth’s disc is above the skyline. The tool does not check whether a ground station is on the side of Earth facing the Moon or free to listen. It also ignores antenna pointing, transmitter power, data rate, and how radio waves bend over a ridge at grazing angles. The antenna is assumed to sit at the same height as the panels. Relay satellites are not modelled.</p>
+          <p class="effect"><span class="tag">Effect</span> Earth in view is needed for a direct link but does not guarantee one.</p>
+        </li>
+      </ol>
+
+      <h3>7. Not modelled at all</h3>
       <ul class="plain">
-        <li>Terrain is sampled every 240 m. Boulders, small craters and the lander’s own tilt are missing, and as the comparison above shows, a site a hundred metres off a crest can behave very differently from the crest itself.</li>
-        <li>Real terrain covers 80°S to the pole. Elsewhere the horizon is a smooth sphere. That is fair where the Sun and Earth ride high, but not inside craters or valleys.</li>
-        <li>Sites between 80°S and about 81.5°S sit near the edge of the terrain grid, so hills further north are missing from their skyline.</li>
-        <li>The power estimate leaves out dust, heat, panel ageing and the Moon’s changing distance from the Sun.</li>
-        <li>In the sky view, the skyline and the positions and sizes of the Sun and Earth are computed. Earth shows the face and phase it would really show, without clouds. The brightness of the ground and the small craters and grain underfoot are illustrative, drawn to follow the Sun’s direction. They are not real features or real shadows. The shading on the south-pole map is illustrative too.</li>
+        <li>Temperature and thermal conditions</li>
+        <li>Landing safety: slopes, rocks and craters at the scale of a lander</li>
+        <li>Surface roughness, and whether a rover could drive there</li>
+        <li>Water ice and other resources</li>
+        <li>Dust, radiation and micrometeoroids</li>
+        <li>Earthshine, the faint light Earth casts on the Moon’s night side</li>
+      </ul>
+
+      <h3>8. The catalogue and your pins</h3>
+      <ol class="cons">
+        <li>
+          <p><b>Mission coordinates were not checked against primary sources.</b> Past and planned mission sites use landing coordinates from public reports of each mission. They were not checked against each mission’s own published data for this page. VIPER’s site is an approximate planned location.</p>
+        </li>
+        <li>
+          <p><b>Crest sites are moved.</b> LLS 01 to LLS 05 sit on the highest grid cell within 2 to 20 km of a published point, so they are not the published points themselves. Each one’s Site details gives the original point.</p>
+        </li>
+        <li>
+          <p><b>Pins are only as precise as the click.</b> A pin dropped on the globe or map lands where the pointer was, at the scale of the screen. For exact work, type the coordinates. Latitude is positive north, and longitude runs east from 0° to 360°.</p>
+        </li>
+      </ol>
+
+      <h3>9. Pictures versus numbers</h3>
+      <ul class="plain">
+        <li>In the sky view, the skyline and the positions and sizes of the Sun and Earth are computed. Earth shows the face and phase it would really show, without clouds. The brightness of the ground and the small craters and grain underfoot are illustrative, drawn to follow the Sun’s direction. They are not real features or real shadows.</li>
+        <li>The shading on the south-pole map is fixed and does not show real shadows.</li>
         <li>The globe keeps a little light on the Moon’s night side so sites can still be picked there.</li>
       </ul>
+
+      <h3>10. How far it has been tested</h3>
+      <p>Everything that was checked is set out under <a href="#" data-goto="ab-checks">How it was checked</a>: two sites against JPL Horizons for one month, four published illumination points, Shackleton crater’s floor, and the way Earth is turned. Nothing has been compared with measurements from a real lander, and the code has not been independently reviewed. It was written quickly, with AI assistance, by one person. Automated tests and a scripted run through the app check it on every change, but mistakes are still possible.</p>
     </section>
 
     <section id="ab-sources">

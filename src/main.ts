@@ -28,6 +28,7 @@ import {
   sorter,
   storeFilters,
   summaryMatches,
+  hasTerrain,
   type Filters,
 } from './compare-filter';
 import { MAX_MY_SITES, cleanName, loadMySites, makeMySite, nextNumber, storageKey, storeMySites } from './mysites';
@@ -93,7 +94,7 @@ function horizonFor(site: Site): Horizon {
 }
 
 /** True when the site sits inside the south-pole terrain grid. */
-const inGrid = (site: Site) => site.lat < -80.05;
+const inGrid = (site: Site) => hasTerrain(site);
 
 loadDem(`${import.meta.env.BASE_URL}data/spole-dem-240m.bin`, SOUTH_POLE_GRID.size, SOUTH_POLE_GRID.metresPerPixel)
   .then((d) => {
@@ -287,12 +288,15 @@ const MEANS = {
   Earth: { has: 'of direct radio link', lacks: 'without a radio link' },
 };
 
-function bodyFig(name: 'Sun' | 'Earth', change: { visibleNow: boolean; atMs: number | null }): string {
+function bodyFig(name: 'Sun' | 'Earth', change: { visibleNow: boolean; atMs: number | null }, b: BodyView): string {
   const wait = change.atMs === null ? 'Over 60 d' : duration(change.atMs - state.timeMs);
   const never = change.atMs === null;
+  // Elevation of the disc centre above the level, and of the skyline beneath it. The gap between them is what
+  // decides power and radio, and the elevation alone sets how steeply sunlight strikes a flat panel.
+  const angle = `<span class="fig-el" title="Elevation of the ${name}’s centre above the level horizon, and of the terrain skyline in the same direction"><span><b>${degrees(b.el)}</b> elevation</span> <span>skyline ${degrees(b.horizon)}</span></span>`;
   return change.visibleNow
-    ? `<div class="fig ${name.toLowerCase()}"><dt>${name} in view</dt><dd><strong>${wait}</strong><em>${MEANS[name].has}${never ? ', and it does not set in that time' : ' until it sets'}</em></dd></div>`
-    : `<div class="fig ${name.toLowerCase()} off"><dt>${name} hidden</dt><dd><strong>${wait}</strong><em>${MEANS[name].lacks}${never ? ', and it does not rise in that time' : ' until it rises'}</em></dd></div>`;
+    ? `<div class="fig ${name.toLowerCase()}"><dt>${name} in view</dt><dd><strong>${wait}</strong><em>${MEANS[name].has}${never ? ', and it does not set in that time' : ' until it sets'}</em>${angle}</dd></div>`
+    : `<div class="fig ${name.toLowerCase()} off"><dt>${name} hidden</dt><dd><strong>${wait}</strong><em>${MEANS[name].lacks}${never ? ', and it does not rise in that time' : ' until it rises'}</em>${angle}</dd></div>`;
 }
 
 /** Where a body sits against the terrain at the chosen time, for "Site details". */
@@ -307,8 +311,8 @@ function renderFigs() {
   const earth = nextChange(state.site, horizon, 'earth', state.timeMs);
   const sum = summarise(series);
   $('figs').innerHTML =
-    bodyFig('Sun', sun) +
-    bodyFig('Earth', earth) +
+    bodyFig('Sun', sun, view.sun) +
+    bodyFig('Earth', earth, view.earth) +
     `<div class="fig both"><dt>Both in view</dt><dd><strong>${percent(sum.both)}</strong><em>of the 29.5 days after ${dateUTC(state.timeMs, false)}</em></dd></div>`;
   $('s-geom').textContent = `${geometry('Sun', view.sun)} ${geometry('Earth', view.earth)}`;
 }

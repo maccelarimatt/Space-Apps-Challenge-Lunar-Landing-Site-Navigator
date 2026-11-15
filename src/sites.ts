@@ -88,7 +88,8 @@ export const SITES: Site[] = [
     name: 'IM-1 Odysseus',
     lat: -80.13,
     lon: 1.44,
-    group: 'elsewhere',
+    // Just inside the terrain grid, so its horizon is real terrain to the south and missing to the north.
+    group: 'pole',
     note: 'Intuitive Machines’ first lander, February 2024, near Malapert A crater.',
   },
   {

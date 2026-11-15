@@ -1,5 +1,7 @@
 // Filtering and sorting for the Compare tab. Pure functions, so the rules can be tested.
 
+import type { LatLon } from './astro/frame';
+import { SOUTH_POLE_GRID, demPixel } from './astro/horizon';
 import type { Summary } from './astro/windows';
 import type { Site } from './sites';
 
@@ -43,8 +45,11 @@ export const NO_FILTERS: Filters = {
   lonTo: null,
 };
 
-/** True when the south-pole terrain grid covers a site, so its horizon is real terrain. */
-export const hasTerrain = (s: Site) => s.lat < -80.05;
+/**
+ * True when the south-pole terrain grid covers a site, so its horizon is real terrain. The grid is
+ * square, so its corners reach a little further north than 80°S. Ask the grid rather than a latitude.
+ */
+export const hasTerrain = (s: LatLon) => demPixel(SOUTH_POLE_GRID, s) !== null;
 
 /** Filters that depend only on where a site is. Used for the site list as well as the table. */
 export function siteMatches(s: Site, f: Filters): boolean {

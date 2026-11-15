@@ -10,7 +10,7 @@ Built for the 2026 NASA Space Apps Challenge, "Lunar Landing Site Navigator". Th
 
 - **Choose a site** on a 3D Moon lit from the Sun's real direction, on a top-down map of the south pole, from a catalogue of past and candidate landing sites, or by typing coordinates.
 - **See a year at a glance.** A stacked plot draws one line per lunar day, showing how far the Sun (or Earth) stands above the terrain.
-- **Analyse a site.** Stand on the surface and look at the real skyline with the Sun and Earth at their true positions and sizes, Earth showing its real face and phase. Press Play to watch them move along the horizon. A timeline shows when each is in view over the next 29.5 days, and a simple calculator estimates solar power and the battery needed to ride through the longest dark spell.
+- **Analyse a site.** Stand on the surface and look at the real skyline with the Sun and Earth at their true positions and sizes, Earth showing its real face and phase. Each one's elevation angle is shown beside the height of the skyline beneath it, with a countdown to its next setting or rising. Press Play to watch them move along the horizon. A timeline shows when each is in view over the next 29.5 days, and a simple calculator estimates solar power and the battery needed to ride through the longest dark spell.
 - **Compare scenarios.** Tick any number of sites in the list beside the table to put them side by side at the chosen landing date, change the date and tick again to add more dates, and read every row on one time scale. Filter by catalogue, hemisphere, terrain, latitude and longitude range, minimum time in view or longest gap, and sort by any column. The whole state lives in the page address, so a scenario can be shared as a link.
 - **Save your own sites.** Drop a pin anywhere, give it a name, and save it. It joins your own catalogue as MY 01, MY 02 and so on. Saved sites, filters and open sections are kept in the browser's local storage only. There is no server, no account, and nothing is uploaded.
 
@@ -21,7 +21,19 @@ Built for the 2026 NASA Space Apps Challenge, "Lunar Landing Site Navigator". Th
 - The Sun and Earth are treated as discs, so terrain can hide part of one.
 - Everything is calculated in the browser. There is no server.
 
-The About tab in the app gives every formula the code runs, the checks below, and each source with what was taken from it.
+The About tab in the app gives every formula the code runs, the checks below, each source with what was taken from it, and a full list of constraints.
+
+## Constraints
+
+Selene's Compass is a planning and teaching aid, not a flight tool. It has not been reviewed by NASA or compared with measurements from a real lander. The main limits, each set out in full on the About tab with the way it pushes the numbers:
+
+- Real terrain covers only the south polar cap, from about 80°S (about 76°S at the grid's corners). Everywhere else the horizon is a smooth sphere. Sites near the grid's edge are missing the terrain to the north.
+- The terrain is NASA's LOLA grid averaged to 240 m. Narrow crests come out lower and blunter, and nothing within 120 m of the site, or smaller than a grid cell, is counted.
+- Sun and Earth positions come from a compact model, checked against JPL Horizons for one month in 2027. Dates far from the present are unchecked. Lunar eclipses are ignored.
+- "In view" means more than half the disc shows. Analyse samples every 30 minutes. Compare uses longer steps for longer missions, up to 12.5 hours for a year. Windows shorter than one step can be missed.
+- The power figure assumes a panel that always faces the Sun, and leaves out dust, heat, ageing and losses. The battery figure is a lower bound.
+- "Earth in view" is line of sight only. It does not check ground stations, antennas or signal strength.
+- Temperature, landing safety, surface roughness, water ice, dust and radiation are not modelled.
 
 ## How it was checked
 
