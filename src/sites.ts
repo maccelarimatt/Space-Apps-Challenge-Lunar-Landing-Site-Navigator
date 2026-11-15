@@ -4,9 +4,11 @@ export interface Site extends LatLon {
   /** Catalogue number shown as "LLS 01". 0 means a custom pin. */
   no: number;
   name: string;
-  group: 'pole' | 'elsewhere' | 'custom';
-  /** One line on what the place is and where its coordinates come from. */
+  group: 'pole' | 'elsewhere' | 'custom' | 'mine';
+  /** One line on what the place is. */
   note: string;
+  /** Where the coordinates come from, when that needs saying. */
+  detail?: string;
 }
 
 // Crest sites are the highest point in the 240 m LOLA grid within a few
@@ -18,7 +20,8 @@ export const SITES: Site[] = [
     lat: -89.4455,
     lon: 222.686,
     group: 'pole',
-    note: 'Crest between Shackleton and de Gerlache craters, one of the best-lit places near the pole. Highest grid point within 2 km of 89.45°S 222.69°E.',
+    note: 'Crest between Shackleton and de Gerlache craters, one of the best-lit places near the pole.',
+    detail: 'Highest grid point within 2 km of 89.45°S 222.69°E.',
   },
   {
     no: 2,
@@ -26,7 +29,8 @@ export const SITES: Site[] = [
     lat: -89.7786,
     lon: 204.274,
     group: 'pole',
-    note: 'High point on the rim of Shackleton crater. Highest grid point within 3 km of 89.78°S 204.27°E.',
+    note: 'High point on the rim of Shackleton crater.',
+    detail: 'Highest grid point within 3 km of 89.78°S 204.27°E.',
   },
   {
     no: 3,
@@ -34,7 +38,8 @@ export const SITES: Site[] = [
     lat: -88.6663,
     lon: 291.77,
     group: 'pole',
-    note: 'High point on the rim of de Gerlache crater. Highest grid point within 4 km of 88.67°S 291.8°E.',
+    note: 'High point on the rim of de Gerlache crater.',
+    detail: 'Highest grid point within 4 km of 88.67°S 291.8°E.',
   },
   {
     no: 4,
@@ -42,7 +47,8 @@ export const SITES: Site[] = [
     lat: -88.807,
     lon: 123.637,
     group: 'pole',
-    note: 'A well-lit crest on the far side of Shackleton from the connecting ridge. Highest grid point within 3 km of 88.74°S 124.5°E.',
+    note: 'A well-lit crest on the far side of Shackleton from the connecting ridge.',
+    detail: 'Highest grid point within 3 km of 88.74°S 124.5°E.',
   },
   {
     no: 5,
@@ -50,7 +56,8 @@ export const SITES: Site[] = [
     lat: -85.9902,
     lon: 2.092,
     group: 'pole',
-    note: 'A 5 km mountain on the Earth-facing side of the pole. Highest grid point within 20 km of 86.0°S 0°E.',
+    note: 'A 5 km mountain on the Earth-facing side of the pole.',
+    detail: 'Highest grid point within 20 km of 86.0°S 0°E.',
   },
   {
     no: 6,
@@ -153,6 +160,14 @@ export function customSite(lat: number, lon: number): Site {
   };
 }
 
-export const catalogueNo = (site: Site) => (site.no ? `LLS ${String(site.no).padStart(2, '0')}` : 'LLS 00');
+/**
+ * "LLS 05" for the built-in catalogue, "MY 03" for a site the visitor saved, and
+ * "Custom site" for an unsaved pin, which never gets a number.
+ */
+export const catalogueNo = (site: Site) =>
+  site.group === 'custom' ? 'Custom site' : `${site.group === 'mine' ? 'MY' : 'LLS'} ${String(site.no).padStart(2, '0')}`;
+
+/** Number and name together, for labels that need both; a custom site is just "Custom site". */
+export const siteTitle = (site: Site) => (site.no ? `${catalogueNo(site)} ${site.name}` : 'Custom site');
 
 export const siteKey = (site: LatLon) => `${site.lat.toFixed(4)},${site.lon.toFixed(4)}`;

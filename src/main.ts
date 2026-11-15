@@ -4,7 +4,7 @@ import '@fontsource/public-sans/700.css';
 import '@fontsource/marcellus-sc/400.css';
 import './styles.css';
 
-import { moonState } from './astro/frame';
+import { earthAxesAtSite, moonState } from './astro/frame';
 import { SOUTH_POLE_GRID, computeHorizon, loadDem, type Dem, type Horizon } from './astro/horizon';
 import {
   DAY_MS,
@@ -19,9 +19,20 @@ import {
   type Series,
   type SiteView,
 } from './astro/windows';
-import { coords, dateTimeUTC, dateUTC, degrees, duration, hours, isoDate, isoTime, metres, percent } from './format';
-import { methodHtml } from './method';
-import { SITES, catalogueNo, customSite, siteKey, type Site } from './sites';
+import { coords, dateTimeUTC, dateUTC, degrees, duration, esc, hours, isoDate, isoTime, metres, percent } from './format';
+import {
+  NO_FILTERS,
+  activeCount,
+  loadFilters,
+  siteMatches,
+  sorter,
+  storeFilters,
+  summaryMatches,
+  type Filters,
+} from './compare-filter';
+import { MAX_MY_SITES, cleanName, loadMySites, makeMySite, nextNumber, storageKey, storeMySites } from './mysites';
+import { aboutHtml, drawComparison, drawSkyline, wireAbout } from './about';
+import { SITES, catalogueNo, customSite, siteKey, siteTitle, type Site } from './sites';
 import { createGlobe, type GlobeApi } from './views/globe';
 import { lanesHeight, lanesMarkup, type LaneKind } from './views/lanes';
 import { createPolarMap, type MapApi } from './views/polarmap';
@@ -29,8 +40,8 @@ import { createRidge, type RidgeRow } from './views/ridge';
 import { createSky, type SkyApi } from './views/skyview';
 import { createStrip } from './views/strip';
 
-type Tab = 'choose' | 'analyse' | 'compare' | 'method';
-type Flag = 'time' | 'site' | 'tab' | 'view' | 'body' | 'rig' | 'compare' | 'dem';
+type Tab = 'choose' | 'analyse' | 'compare' | 'about';
+type Flag = 'time' | 'site' | 'tab' | 'view' | 'body' | 'rig' | 'compare' | 'dem' | 'play' | 'mine' | 'filter';
 
 interface Scenario {
   site: Site;
@@ -40,8 +51,13 @@ interface Scenario {
 const TEN_MIN = 600_000;
 const SOLAR_CONSTANT = 1361; // W/m² at the Moon's distance from the Sun
 
+const nowMs = () => Math.round(Date.now() / TEN_MIN) * TEN_MIN;
+
+/** True while the date follows the clock; false once the visitor (or a link) picks a date. */
+let followNow = true;
+
 const state = {
-  timeMs: Math.round(Date.now() / TEN_MIN) * TEN_MIN,
+  timeMs: nowMs(),
   site: SITES[0],
   tab: 'choose' as Tab,
   view: 'globe' as 'globe' | 'map',
@@ -103,8 +119,14 @@ function set(patch: Partial<typeof state>, ...flags: Flag[]) {
   invalidate(...flags);
 }
 
+/** Sites this visitor saved. They live in this browser's storage only (see mysites.ts). */
+let mySites: Site[] = loadMySites();
+
+/** Compare filters, remembered per browser. */
+let filters: Filters = loadFilters();
+
 function allSites(): Site[] {
-  return state.site.no === 0 ? [...SITES, state.site] : SITES;
+  return state.site.group === 'custom' ? [...SITES, ...mySites, state.site] : [...SITES, ...mySites];
 }
 
 // ---------------------------------------------------------------------------
@@ -126,9 +148,16 @@ if (!globe) {
 const strip = createStrip($('strip'), (az) => sky?.look(az));
 const ridge = createRidge($('ridge'), $('ridge-readout'), (timeMs) => setTime(timeMs));
 
-function setTime(ms: number) {
+function setTime(ms: number, follow = false) {
+  setPlaying(false);
+  followNow = follow;
   set({ timeMs: Math.round(ms / TEN_MIN) * TEN_MIN }, 'time');
 }
+
+// While following the clock, step forward with it.
+setInterval(() => {
+  if (followNow && nowMs() !== state.timeMs) setTime(Date.now(), true);
+}, 30_000);
 
 // ---------------------------------------------------------------------------
 // Derived data, recomputed in flush()
@@ -160,6 +189,7 @@ function computeRidge() {
 function renderBar() {
   $<HTMLInputElement>('date').value = isoDate(state.timeMs);
   $<HTMLInputElement>('time').value = isoTime(state.timeMs);
+  $('now').setAttribute('aria-pressed', String(followNow));
   document.querySelectorAll<HTMLButtonElement>('.tabs button').forEach((b) => {
     if (b.dataset.tab === state.tab) b.setAttribute('aria-current', 'page');
     else b.removeAttribute('aria-current');
@@ -179,35 +209,62 @@ function renderList() {
     const on = siteKey(site) === siteKey(state.site);
     return `<li><button type="button" class="site${on ? ' on' : ''}" data-key="${siteKey(site)}"${on ? ' aria-current="true"' : ''}
       title="Sun ${fillWord(v.sun.fraction)}, Earth ${fillWord(v.earth.fraction)}">
-      <span class="no">${catalogueNo(site)}</span><span class="nm">${site.name}</span>
+      <span class="no">${site.group === 'custom' ? '' : catalogueNo(site)}</span><span class="nm">${esc(site.name)}</span>
       <span class="code" aria-hidden="true"><i class="sun ${fillClass(v.sun.fraction)}"></i><i class="earth ${fillClass(v.earth.fraction)}"></i><i class="both ${fillClass(both)}"></i></span>
       <span class="vh">Sun ${fillWord(v.sun.fraction)}, Earth ${fillWord(v.earth.fraction)}</span>
     </button></li>`;
   };
-  const pole = allSites().filter((s) => s.group === 'pole' || (s.group === 'custom' && inGrid(s)));
-  const rest = allSites().filter((s) => s.group === 'elsewhere' || (s.group === 'custom' && !inGrid(s)));
+  // On Compare the list is narrowed by the same place filters as the table.
+  const keep = state.tab === 'compare' ? (s: Site) => siteMatches(s, filters) : () => true;
+  const mine = mySites.filter(keep);
+  const pole = allSites().filter((s) => (s.group === 'pole' || (s.group === 'custom' && inGrid(s))) && keep(s));
+  const rest = allSites().filter((s) => (s.group === 'elsewhere' || (s.group === 'custom' && !inGrid(s))) && keep(s));
+  $('list-mine').innerHTML = mine.map(row).join('');
+  $('mine-block').hidden = !mine.length;
   $('list-pole').innerHTML = pole.map(row).join('');
   $('list-else').innerHTML = rest.map(row).join('');
+  $('h-pole').hidden = $('list-pole').hidden = !pole.length;
+  $('h-else').hidden = $('list-else').hidden = !rest.length;
+  $('sites-none').hidden = mine.length + pole.length + rest.length > 0;
+}
+
+/** Save, rename and remove, under the site name. */
+function renderMineTools() {
+  const s = state.site;
+  $('rename').hidden = true;
+  $('s-name').hidden = false;
+  const el = $('mine-tools');
+  el.hidden = false;
+  el.innerHTML =
+    s.group === 'custom'
+      ? '<button type="button" data-mine="save">Save to My sites</button><span>Kept in this browser only.</span>'
+      : s.group === 'mine'
+        ? '<button type="button" data-mine="rename">Rename</button><button type="button" data-mine="remove">Remove from My sites</button>'
+        : '';
 }
 
 function renderHead() {
   const s = state.site;
   $('s-no').textContent = catalogueNo(s);
-  $('s-name').textContent = s.name;
+  $('s-no').classList.toggle('custom', s.group === 'custom');
+  // A custom site has no name of its own, so its coordinates stand in for one.
+  $('s-name').textContent = s.group === 'custom' ? coords(s) : s.name;
   const elev =
     horizon.source === 'terrain' ? `, ground ${metres(horizon.groundM)}` : '';
   $('s-ll').textContent = `${coords(s)}${elev}`;
+  // The line under the name says what the place is, and carries anything that is
+  // going wrong. Where the numbers come from sits behind "Site details".
   let note = s.note;
+  let detail = s.detail ?? '';
   if (horizon.source === 'sphere') {
-    note += inGrid(s)
-      ? demError
-        ? ' Terrain data could not be loaded, so a smooth horizon is used.'
-        : ' Loading terrain…'
-      : ' Outside the south-pole terrain grid, so the horizon is a smooth sphere.';
+    if (!inGrid(s)) detail += ' Outside the south-pole terrain grid, so the horizon is a smooth sphere.';
+    else note += demError ? ' Terrain data could not be loaded, so a smooth horizon is used.' : ' Loading terrain…';
   } else if (s.lat > -81.5) {
-    note += ' Close to the edge of the terrain grid: hills further north are not included.';
+    detail += ' Close to the edge of the terrain grid: hills further north are not included.';
   }
   $('s-note').textContent = note;
+  $('s-detail').textContent = detail.trim();
+  $('s-detail').hidden = !detail;
   // The coordinate fields always show the site on screen, so they can be nudged and re-entered.
   if (coordKey !== siteKey(s)) {
     coordKey = siteKey(s);
@@ -226,13 +283,25 @@ function renderHeadCode() {
   el.title = `Sun ${fillWord(view.sun.fraction)}, Earth ${fillWord(view.earth.fraction)}`;
 }
 
-function bodyFig(name: string, b: BodyView, change: { visibleNow: boolean; atMs: number | null }): string {
-  const top = b.clearance + b.radius;
+/** What each body being in view, or hidden, means for the lander. */
+const MEANS = {
+  Sun: { has: 'of sunlight', lacks: 'of darkness' },
+  Earth: { has: 'of direct radio link', lacks: 'without a radio link' },
+};
+
+function bodyFig(name: 'Sun' | 'Earth', change: { visibleNow: boolean; atMs: number | null }): string {
   const wait = change.atMs === null ? 'Over 60 d' : duration(change.atMs - state.timeMs);
   const never = change.atMs === null;
   return change.visibleNow
-    ? `<div class="fig ${name.toLowerCase()}"><dt>${name} in view</dt><dd><strong>${wait}</strong><em>${never ? 'it does not set in that time' : 'until it sets'}; ${b.fraction < 0.999 ? 'partly hidden now' : `top edge ${degrees(top)} above terrain`}</em></dd></div>`
-    : `<div class="fig ${name.toLowerCase()} off"><dt>${name} hidden</dt><dd><strong>${wait}</strong><em>${never ? 'it does not rise in that time' : 'until it rises'}; ${degrees(-top)} below terrain now</em></dd></div>`;
+    ? `<div class="fig ${name.toLowerCase()}"><dt>${name} in view</dt><dd><strong>${wait}</strong><em>${MEANS[name].has}${never ? ', and it does not set in that time' : ' until it sets'}</em></dd></div>`
+    : `<div class="fig ${name.toLowerCase()} off"><dt>${name} hidden</dt><dd><strong>${wait}</strong><em>${MEANS[name].lacks}${never ? ', and it does not rise in that time' : ' until it rises'}</em></dd></div>`;
+}
+
+/** Where a body sits against the terrain at the chosen time, for "Site details". */
+function geometry(name: string, b: BodyView): string {
+  const top = b.clearance + b.radius;
+  if (b.fraction <= 0.001) return `${name}: hidden, top edge ${degrees(-top)} below the terrain.`;
+  return `${name}: ${b.fraction < 0.999 ? 'partly hidden' : 'whole disc in view'}, top edge ${degrees(top)} above the terrain.`;
 }
 
 function renderFigs() {
@@ -240,15 +309,16 @@ function renderFigs() {
   const earth = nextChange(state.site, horizon, 'earth', state.timeMs);
   const sum = summarise(series);
   $('figs').innerHTML =
-    bodyFig('Sun', view.sun, sun) +
-    bodyFig('Earth', view.earth, earth) +
+    bodyFig('Sun', sun) +
+    bodyFig('Earth', earth) +
     `<div class="fig both"><dt>Both in view</dt><dd><strong>${percent(sum.both)}</strong><em>of the 29.5 days after ${dateUTC(state.timeMs, false)}</em></dd></div>`;
+  $('s-geom').textContent = `${geometry('Sun', view.sun)} ${geometry('Earth', view.earth)}`;
 }
 
 function renderRidge() {
   computeRidge();
   const name = state.body === 'sun' ? 'Sun' : 'Earth';
-  $('ridge-hint').textContent = `One line per lunar day (29.5 Earth days). Height is how far the ${name}’s top edge stands above the terrain; flat means hidden.`;
+  $('ridge-hint').textContent = `One line per lunar day (29.5 Earth days). Height is how far the ${name}’s top edge stands above the terrain. A flat line means it is hidden.`;
   ridge.render({
     rows: ridgeRows,
     current: 6,
@@ -299,8 +369,10 @@ function renderPower() {
   const peak = SOLAR_CONSTANT * state.areaM2 * (state.efficiency / 100);
   const now = peak * view.sun.fraction;
   const el = $('power');
+  const brief = $('power-brief');
   if (peak < state.needW) {
     el.textContent = `Even in full Sun this panel makes ${watts(peak)}, less than the ${watts(state.needW)} you need. Try a larger panel.`;
+    brief.textContent = 'panel too small';
     return;
   }
   let met = 0;
@@ -323,11 +395,13 @@ function renderPower() {
       ? ` The longest shortfall lasts ${hours(worstH)}; riding through it at ${watts(state.needW)} takes about ${((state.needW * worstH) / 1000).toFixed(1)} kWh of stored energy.`
       : ' There is no shortfall in this period.';
   el.textContent = `Facing the Sun, this panel makes up to ${watts(peak)}: ${nowText}. It covers your ${watts(state.needW)} for ${percent(share)} of the next 29.5 days.${battery}`;
+  brief.textContent = `${watts(state.needW)} covered ${percent(share)} of the time`;
 }
 
 function renderSky() {
+  $('sky-when').textContent = dateTimeUTC(state.timeMs);
   if (!sky) return;
-  sky.setScene(horizon, view, series);
+  sky.setScene(horizon, view, series, earthAxesAtSite(state.timeMs, state.site));
   strip.render({ horizon, view, track: series, lookAz: sky.az, fovDeg: sky.hfov });
   $('strip-src').textContent =
     horizon.source === 'terrain' ? 'terrain from LOLA, 240 m grid' : 'smooth sphere, no terrain data here';
@@ -369,35 +443,56 @@ function scenarioSeries(sc: Scenario): Series {
   return sampleSeries(sc.site, horizonFor(sc.site), sc.timeMs, sc.timeMs + span, step);
 }
 
+/** "Showing 3 of 7", the Clear button, and how many of the extra filters are on. */
+function renderFilterCount(shown: number, total: number) {
+  const n = activeCount(filters);
+  $('f-count').textContent = total && n ? `Showing ${shown} of ${total} scenarios.` : '';
+  $('f-clear').hidden = !n;
+  const extra = (['minSun', 'minEarth', 'minBoth', 'maxDarkH', 'maxNoLinkH', 'latFrom', 'latTo', 'lonFrom', 'lonTo'] as const).filter((k) => filters[k] !== null).length;
+  $('f-more-count').textContent = extra ? `${extra} on` : '';
+}
+
 function renderCompare() {
   const body = $('cmp-body');
   if (!state.compare.length) {
+    renderFilterCount(0, 0);
     body.innerHTML = `<p class="empty">Nothing pinned yet. Choose a site and a date, then use <b>Add to compare</b>. Pin the same site on two dates to see what a schedule slip costs, or two sites on one date to pick between them.</p>`;
     return;
   }
-  const rows = state.compare.map((sc, i) => {
+  const all = state.compare.map((sc, i) => {
     const s = scenarioSeries(sc);
     const sum = summarise(s);
     return { sc, s, sum, i };
   });
+  const spanH = state.spanDays * 24;
+  const rows = all.filter((r) => siteMatches(r.sc.site, filters) && summaryMatches(r.sum, filters)).sort(sorter(filters.sort, spanH));
+  renderFilterCount(rows.length, all.length);
+  if (!rows.length) {
+    body.innerHTML = `<p class="empty">None of the ${all.length} scenarios match these filters. Loosen them, or use <b>Clear filters</b> above to see them all.</p>`;
+    return;
+  }
   const best = Math.max(...rows.map((r) => r.sum.both));
+  // The column the table is sorted by is marked, so the order can be read at a glance.
+  const col = { added: '', sun: 'sun', sunH: 'sun', earth: 'earth', earthH: 'earth', both: 'both', dark: 'dark', nolink: 'nolink' }[filters.sort];
+  const mark = (c: string, dir = 'descending') => (c === col ? ` sorted" aria-sort="${dir}` : '');
+  const hrs = (share: number) => `<span class="sub">${Math.round(share * spanH)} h</span>`;
   body.innerHTML = `<table class="cmp">
     <thead><tr>
       <th scope="col">Site</th><th scope="col">Landing (UTC)</th>
       <th scope="col" class="lanes-col">Days after landing<span class="cmp-axis" id="cmp-axis"></span></th>
-      <th scope="col" class="num">Sun</th><th scope="col" class="num">Earth</th><th scope="col" class="num">Both</th>
-      <th scope="col" class="num"><span class="gap-key"></span>Longest without Sun</th><th scope="col" class="num"><span class="gap-key"></span>Longest without Earth</th><th scope="col"><span class="vh">Remove</span></th>
+      <th scope="col" class="num${mark('sun')}">Sun</th><th scope="col" class="num${mark('earth')}">Earth</th><th scope="col" class="num${mark('both')}">Both</th>
+      <th scope="col" class="num${mark('dark', 'ascending')}"><span class="gap-key"></span>Longest without Sun</th><th scope="col" class="num${mark('nolink', 'ascending')}"><span class="gap-key"></span>Longest without Earth</th><th scope="col"><span class="vh">Remove</span></th>
     </tr></thead>
     <tbody>${rows
       .map(
         ({ sc, sum, i }) => `<tr>
-        <th scope="row"><button type="button" class="cmp-open" data-open="${i}"><span class="no">${catalogueNo(sc.site)}</span>${sc.site.name}<span class="ll">${coords(sc.site)}</span></button></th>
+        <th scope="row"><button type="button" class="cmp-open" data-open="${i}"><span class="no">${sc.site.group === 'custom' ? '' : catalogueNo(sc.site)}</span>${esc(sc.site.name)}<span class="ll">${coords(sc.site)}</span></button></th>
         <td>${dateTimeUTC(sc.timeMs).replace(' UTC', '')}</td>
         <td class="lanes-col"><div class="cmp-lanes" data-row="${i}"></div></td>
-        <td class="num">${percent(sum.sun)}</td><td class="num">${percent(sum.earth)}</td>
-        <td class="num${sum.both === best && rows.length > 1 ? ' best' : ''}">${percent(sum.both)}${sum.both === best && rows.length > 1 ? '<span class="tag">most</span>' : ''}</td>
-        <td class="num">${stretch(sum.longestDarkH)}</td><td class="num">${stretch(sum.longestNoLinkH)}</td>
-        <td><button type="button" class="cmp-x" data-remove="${i}" aria-label="Remove ${catalogueNo(sc.site)} on ${dateUTC(sc.timeMs)}">Remove</button></td>
+        <td class="num${col === 'sun' ? ' sorted' : ''}">${percent(sum.sun)}${hrs(sum.sun)}</td><td class="num${col === 'earth' ? ' sorted' : ''}">${percent(sum.earth)}${hrs(sum.earth)}</td>
+        <td class="num${sum.both === best && rows.length > 1 ? ' best' : ''}${col === 'both' ? ' sorted' : ''}">${percent(sum.both)}${sum.both === best && rows.length > 1 ? '<span class="tag">most</span>' : hrs(sum.both)}</td>
+        <td class="num${col === 'dark' ? ' sorted' : ''}">${stretch(sum.longestDarkH)}</td><td class="num${col === 'nolink' ? ' sorted' : ''}">${stretch(sum.longestNoLinkH)}</td>
+        <td><button type="button" class="cmp-x" data-remove="${i}" aria-label="Remove ${esc(siteTitle(sc.site))} on ${dateUTC(sc.timeMs)}">Remove</button></td>
       </tr>`,
       )
       .join('')}</tbody></table>`;
@@ -415,6 +510,22 @@ function renderCompare() {
   $('cmp-axis').innerHTML = ticks.map((t) => `<i style="left:${t * 100}%">${Math.round(t * state.spanDays)}</i>`).join('');
 }
 
+// --- About -------------------------------------------------------------------
+
+/** The About page's live figures: LLS 01's real skyline, and the comparison chart. */
+function renderAbout() {
+  drawComparison($('about-compare'));
+  if (!dem) {
+    if (demError) $('about-skyline').innerHTML = '<p class="fig-wait">Terrain data could not be loaded, so this figure is unavailable.</p>';
+    return;
+  }
+  const site = SITES[0];
+  const h = computeHorizon(dem, site, 2);
+  const start = Math.round(Date.now() / HOUR_MS) * HOUR_MS;
+  const track = sampleSeries(site, h, start, start + LUNAR_DAY_MS, HOUR_MS);
+  drawSkyline($('about-skyline'), h, track, viewAt(site, h, start));
+}
+
 // --- Flush -------------------------------------------------------------------
 
 let lastSiteKey = '';
@@ -422,11 +533,72 @@ let statusText = '';
 
 /** Point the sky view at whichever body is in view, the Sun first. */
 function faceBody(which?: 'sun' | 'earth') {
-  const b = which ? view[which] : view.sun.fraction > 0 || view.earth.fraction === 0 ? view.sun : view.earth;
+  facing = which ?? (view.sun.fraction > 0 || view.earth.fraction === 0 ? 'sun' : 'earth');
+  const b = view[facing];
   // Frame both the body and the skyline beneath it: tight at the pole, wide where the body rides high.
   const top = Math.max(b.el + b.radius, b.horizon);
   const bottom = Math.min(b.el - b.radius, b.horizon);
   sky?.look(b.az, (top + bottom) / 2, Math.max(7, Math.min(60, (top - bottom + 3) * 1.7)));
+  sky?.hold(b.el);
+  following = true;
+  followRef = Math.max(b.el, b.horizon);
+}
+
+// --- Play --------------------------------------------------------------------
+// Runs the clock forward so the Sun and Earth can be watched moving along the
+// skyline. The sky is redrawn every frame; the heavier panels catch up a few
+// times a second.
+
+const PLAY_HOURS_PER_SECOND = 12;
+let playing = false;
+let playMs = 0;
+let playLast = 0;
+let playFull = 0;
+let facing: 'sun' | 'earth' = 'sun';
+/** True while the view keeps the chosen body in frame; dragging the sky lets go. */
+let following = true;
+/** Height of whatever the view was last aimed at: the body, or the skyline hiding it. */
+let followRef = 0;
+
+/** Keep the body being watched where it was in the frame as it moves. */
+function followBody() {
+  if (!sky || !following) return;
+  const b = view[facing];
+  const ref = Math.max(b.el, b.horizon);
+  sky.look(b.az, sky.pitch + ref - followRef);
+  sky.hold(b.el);
+  followRef = ref;
+}
+
+function setPlaying(on: boolean) {
+  if (on === playing) return;
+  playing = on;
+  const b = $('play');
+  b.setAttribute('aria-pressed', String(on));
+  b.querySelector('span')!.textContent = on ? 'Pause' : 'Play';
+  if (on) {
+    followNow = false;
+    playMs = state.timeMs;
+    playLast = performance.now();
+    faceBody(facing);
+    requestAnimationFrame(playFrame);
+  } else {
+    invalidate('time');
+  }
+}
+
+function playFrame(now: number) {
+  if (!playing) return;
+  playMs += Math.min(now - playLast, 100) * PLAY_HOURS_PER_SECOND * 3600;
+  playLast = now;
+  state.timeMs = Math.round(playMs / TEN_MIN) * TEN_MIN;
+  if (now - playFull > 400) {
+    playFull = now;
+    invalidate('time');
+  } else {
+    invalidate('play');
+  }
+  requestAnimationFrame(playFrame);
 }
 
 function flush() {
@@ -436,14 +608,26 @@ function flush() {
 
   horizon = horizonFor(state.site);
   view = viewAt(state.site, horizon, state.timeMs);
+
+  // A frame of Play on its own: move the clock, the status blocks and the sky, nothing else.
+  if (f.size === 1 && f.has('play') && state.tab === 'analyse') {
+    renderBar();
+    renderHeadCode();
+    $('sky-when').textContent = dateTimeUTC(state.timeMs);
+    sky?.setBodies(view, earthAxesAtSite(state.timeMs, state.site));
+    followBody();
+    return;
+  }
+  if (state.tab !== 'analyse') setPlaying(false);
   if (has('time', 'site', 'rig', 'dem') || !series) {
     series = sampleSeries(state.site, horizon, state.timeMs, state.timeMs + LUNAR_DAY_MS, 30 * 60_000);
   }
 
   renderBar();
   if (has('tab', 'view')) renderStageView();
-  if (has('time', 'site', 'dem', 'rig')) renderList();
-  if (has('site', 'dem', 'rig')) renderHead();
+  if (has('time', 'site', 'dem', 'rig', 'mine', 'filter', 'tab')) renderList();
+  if (has('site', 'dem', 'rig', 'mine')) renderHead();
+  if (has('site', 'mine')) renderMineTools();
   if (has('time', 'site', 'dem', 'rig')) {
     renderFigs();
     renderHeadCode();
@@ -461,7 +645,8 @@ function flush() {
   if (state.tab === 'choose' && has('time', 'site', 'dem', 'rig', 'body', 'tab')) renderRidge();
   if (state.tab === 'analyse') {
     if (!sky) {
-      sky = createSky($('sky'), (az, fov) => strip.setLook(az, fov));
+      sky = createSky($('sky'), `${import.meta.env.BASE_URL}data/earth-1k.jpg`, (az, fov) => strip.setLook(az, fov));
+      sky?.setGuides($('paths').getAttribute('aria-pressed') === 'true');
       if (!sky) $('sky').innerHTML = '<p class="fallback">This browser could not start 3D graphics. The horizon strip below shows the same sky.</p>';
     }
     sky?.setActive(true);
@@ -471,26 +656,30 @@ function flush() {
       renderGaps();
       renderPower();
     }
-    if (has('tab', 'site') && sky) {
+    if (has('tab', 'site', 'dem') && sky) {
+      // A new site, or terrain arriving, changes what is in view: aim again.
       faceBody();
-    } else if (has('dem') && sky) {
-      // Terrain arriving changes what is in view; re-aim once.
-      faceBody();
+    } else if (playing) {
+      followBody();
     }
   } else {
     sky?.setActive(false);
   }
-  if (state.tab === 'compare' && has('compare', 'tab', 'dem', 'rig')) renderCompare();
+  if (has('mine')) renderStageSites();
+  if (state.tab === 'compare' && has('compare', 'tab', 'dem', 'rig', 'filter', 'mine')) renderCompare();
+  if (state.tab === 'about' && has('tab', 'dem')) renderAbout();
   if (has('time', 'site', 'tab', 'compare', 'view')) writeHash();
   $('go').textContent = state.tab === 'analyse' ? 'Back to the Moon' : 'Analyse this site';
   $('status').textContent = statusText;
+  $('cmp-status').textContent = statusText;
   statusText = '';
 }
 
 // --- URL ---------------------------------------------------------------------
 
 function findSite(lat: number, lon: number): Site {
-  return SITES.find((s) => Math.abs(s.lat - lat) < 1e-3 && Math.abs(s.lon - lon) < 1e-3) ?? customSite(lat, lon);
+  const near = (s: Site) => Math.abs(s.lat - lat) < 1e-3 && Math.abs(s.lon - (((lon % 360) + 360) % 360)) < 1e-3;
+  return SITES.find(near) ?? mySites.find(near) ?? customSite(lat, lon);
 }
 
 let hashTimer = 0;
@@ -499,7 +688,8 @@ function writeHash() {
   hashTimer = window.setTimeout(() => {
     const p = new URLSearchParams();
     p.set('site', `${state.site.lat.toFixed(4)},${state.site.lon.toFixed(4)}`);
-    p.set('t', new Date(state.timeMs).toISOString().slice(0, 16));
+    // A link made while following the clock opens on the reader's own "now".
+    if (!followNow) p.set('t', new Date(state.timeMs).toISOString().slice(0, 16));
     if (state.tab !== 'choose') p.set('tab', state.tab);
     if (state.view !== 'globe') p.set('view', state.view);
     if (state.compare.length) {
@@ -513,10 +703,15 @@ function readHash() {
   const p = new URLSearchParams(location.hash.slice(1));
   const site = p.get('site')?.split(',').map(Number);
   if (site && site.length === 2 && site.every(Number.isFinite) && Math.abs(site[0]) <= 90) state.site = findSite(site[0], site[1]);
-  const t = Date.parse(`${p.get('t')}:00Z`);
-  if (Number.isFinite(t)) state.timeMs = Math.round(t / TEN_MIN) * TEN_MIN;
+  // Only a well-formed date counts. Chrome reads a missing one ("null:00Z") as 1 Jan 2000.
+  const when = p.get('t') ?? '';
+  const t = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(when) ? Date.parse(`${when}:00Z`) : NaN;
+  followNow = !Number.isFinite(t);
+  state.timeMs = followNow ? nowMs() : Math.round(t / TEN_MIN) * TEN_MIN;
   const tab = p.get('tab');
-  if (tab === 'analyse' || tab === 'compare' || tab === 'method') state.tab = tab;
+  if (tab === 'analyse' || tab === 'compare' || tab === 'about') state.tab = tab;
+  // Links made before the Method tab was renamed still open it.
+  if (tab === 'method') state.tab = 'about';
   if (p.get('view') === 'map') state.view = 'map';
   const cmp = p.get('cmp');
   if (cmp) {
@@ -560,13 +755,14 @@ whenForm.addEventListener('click', (e) => {
   const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-shift]');
   if (b) setTime(state.timeMs + Number(b.dataset.shift) * DAY_MS);
 });
-$('now').addEventListener('click', () => setTime(Date.now()));
+$('now').addEventListener('click', () => setTime(Date.now(), true));
 
 document.querySelector('.sites')!.addEventListener('click', (e) => {
   const b = (e.target as HTMLElement).closest<HTMLButtonElement>('.site');
   if (!b) return;
   const site = allSites().find((s) => siteKey(s) === b.dataset.key);
-  if (site) select(site);
+  // On Compare the list adds a scenario instead of moving to the site.
+  if (site) state.tab === 'compare' ? addScenario(site) : select(site);
 });
 
 $<HTMLFormElement>('goto').addEventListener('submit', (e) => {
@@ -601,18 +797,175 @@ $<HTMLFormElement>('goto').addEventListener('submit', (e) => {
 
 $('go').addEventListener('click', () => set({ tab: state.tab === 'analyse' ? 'choose' : 'analyse' }, 'tab'));
 
-function addScenario() {
-  const dup = state.compare.some((c) => siteKey(c.site) === siteKey(state.site) && c.timeMs === state.timeMs);
-  if (dup) statusText = 'That site and date are already in Compare. Change the date or the site to add another.';
+function addScenario(site = state.site) {
+  const dup = state.compare.some((c) => siteKey(c.site) === siteKey(site) && c.timeMs === state.timeMs);
+  const name = site.no ? catalogueNo(site) : 'The custom site';
+  if (dup) statusText = `${name} on that date is already in Compare. Change the date to add it again.`;
   else if (state.compare.length >= 12) statusText = 'Compare holds 12 scenarios. Remove one first.';
   else {
-    state.compare = [...state.compare, { site: state.site, timeMs: state.timeMs }];
-    statusText = `Added ${catalogueNo(state.site)} on ${dateUTC(state.timeMs)} to Compare.`;
+    state.compare = [...state.compare, { site, timeMs: state.timeMs }];
+    statusText = `Added ${site.no ? name : 'the custom site'} on ${dateUTC(state.timeMs)} to Compare.`;
   }
   invalidate('compare');
 }
-$('add').addEventListener('click', addScenario);
-$('cmp-add').addEventListener('click', addScenario);
+$('add').addEventListener('click', () => addScenario());
+$('cmp-add').addEventListener('click', () => addScenario());
+
+// --- My sites ------------------------------------------------------------------
+
+/** Puts a new version of a site everywhere the old one appears: on screen and in Compare. */
+function swapSite(key: string, next: Site) {
+  if (siteKey(state.site) === key) state.site = next;
+  state.compare = state.compare.map((c) => (siteKey(c.site) === key ? { ...c, site: next } : c));
+}
+
+function saveSite() {
+  const s = state.site;
+  if (mySites.length >= MAX_MY_SITES) {
+    statusText = `My sites holds ${MAX_MY_SITES}. Remove one first.`;
+    invalidate('mine');
+    return;
+  }
+  const no = nextNumber(mySites);
+  const site = makeMySite(no, `My site ${String(no).padStart(2, '0')}`, s.lat, s.lon);
+  if (!storeMySites([...mySites, site])) {
+    statusText = 'This browser would not save the site. Its storage may be turned off or full.';
+    invalidate('mine');
+    return;
+  }
+  mySites = [...mySites, site];
+  swapSite(siteKey(s), site);
+  statusText = `Saved as ${catalogueNo(site)}. Give it a name, or keep this one. Only this browser keeps it.`;
+  invalidate('mine', 'site');
+  // Offer the name straight away, once the panel has redrawn.
+  requestAnimationFrame(() => requestAnimationFrame(startRename));
+}
+
+function startRename() {
+  if (state.site.group !== 'mine') return;
+  const input = $<HTMLInputElement>('rename-input');
+  input.value = state.site.name;
+  $('s-name').hidden = true;
+  $('mine-tools').hidden = true;
+  $('rename').hidden = false;
+  input.focus();
+  input.select();
+}
+
+function finishRename(save: boolean) {
+  const s = state.site;
+  const name = cleanName($<HTMLInputElement>('rename-input').value);
+  if (save && name && s.group === 'mine' && name !== s.name) {
+    const next = { ...s, name };
+    const list = mySites.map((m) => (m.no === s.no ? next : m));
+    if (storeMySites(list)) {
+      mySites = list;
+      swapSite(siteKey(s), next);
+      statusText = `Renamed ${catalogueNo(next)}.`;
+    } else {
+      statusText = 'This browser would not save the new name. Its storage may be turned off or full.';
+    }
+  }
+  invalidate('mine');
+}
+
+let removeTimer = 0;
+function removeSite(button: HTMLButtonElement) {
+  // Two clicks, so a stray one does not lose a saved site.
+  if (!button.dataset.armed) {
+    button.dataset.armed = '1';
+    button.textContent = 'Click again to remove';
+    clearTimeout(removeTimer);
+    removeTimer = window.setTimeout(() => invalidate('mine'), 4000);
+    return;
+  }
+  clearTimeout(removeTimer);
+  const s = state.site;
+  const list = mySites.filter((m) => m.no !== s.no);
+  if (!storeMySites(list)) {
+    statusText = 'This browser would not update My sites. Its storage may be turned off.';
+    invalidate('mine');
+    return;
+  }
+  mySites = list;
+  swapSite(siteKey(s), customSite(s.lat, s.lon));
+  statusText = `Removed ${catalogueNo(s)} from My sites. It stays on screen as a custom site.`;
+  invalidate('mine', 'site');
+}
+
+$('mine-tools').addEventListener('click', (e) => {
+  const b = (e.target as HTMLElement).closest<HTMLButtonElement>('[data-mine]');
+  if (b?.dataset.mine === 'save') saveSite();
+  else if (b?.dataset.mine === 'rename') startRename();
+  else if (b?.dataset.mine === 'remove') removeSite(b);
+});
+$<HTMLFormElement>('rename').addEventListener('submit', (e) => {
+  e.preventDefault();
+  finishRename(true);
+});
+$('rename-cancel').addEventListener('click', () => finishRename(false));
+$('rename-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') finishRename(false);
+});
+
+// Another tab changed My sites: pick up the new list and names.
+window.addEventListener('storage', (e) => {
+  if (e.key !== storageKey) return;
+  mySites = loadMySites();
+  const refresh = (s: Site) =>
+    s.group === 'mine' || s.group === 'custom'
+      ? mySites.find((m) => siteKey(m) === siteKey(s)) ?? (s.group === 'mine' ? customSite(s.lat, s.lon) : s)
+      : s;
+  state.site = refresh(state.site);
+  state.compare = state.compare.map((c) => ({ ...c, site: refresh(c.site) }));
+  invalidate('mine', 'site');
+});
+
+// --- Compare filters -----------------------------------------------------------
+
+const fv = <T extends HTMLElement = HTMLInputElement>(id: string) => $<T>(id);
+const NUMBER_FILTERS = ['minSun', 'minEarth', 'minBoth', 'maxDarkH', 'maxNoLinkH', 'latFrom', 'latTo', 'lonFrom', 'lonTo'] as const;
+
+function readFilterForm(): Filters {
+  const num = (id: string) => {
+    const raw = fv(`f-${id}`).value.trim();
+    const v = Number(raw);
+    return raw === '' || !Number.isFinite(v) ? null : v;
+  };
+  const f: Filters = {
+    ...NO_FILTERS,
+    source: fv<HTMLSelectElement>('f-source').value as Filters['source'],
+    hemi: fv<HTMLSelectElement>('f-hemi').value as Filters['hemi'],
+    terrainOnly: fv('f-terrain').checked,
+    sort: fv<HTMLSelectElement>('f-sort').value as Filters['sort'],
+  };
+  for (const k of NUMBER_FILTERS) f[k] = num(k);
+  return f;
+}
+
+function writeFilterForm() {
+  fv<HTMLSelectElement>('f-source').value = filters.source;
+  fv<HTMLSelectElement>('f-hemi').value = filters.hemi;
+  fv('f-terrain').checked = filters.terrainOnly;
+  fv<HTMLSelectElement>('f-sort').value = filters.sort;
+  for (const k of NUMBER_FILTERS) fv(`f-${k}`).value = filters[k] === null ? '' : String(filters[k]);
+}
+
+const onFilter = () => {
+  filters = readFilterForm();
+  storeFilters(filters);
+  invalidate('filter');
+};
+$('filters').addEventListener('input', onFilter);
+$('filters').addEventListener('change', onFilter);
+$<HTMLFormElement>('filters').addEventListener('submit', (e) => e.preventDefault());
+$('f-clear').addEventListener('click', () => {
+  // Clearing keeps the chosen order: sorting is not a filter.
+  filters = { ...NO_FILTERS, sort: filters.sort };
+  writeFilterForm();
+  storeFilters(filters);
+  invalidate('filter');
+});
 
 $('cmp-body').addEventListener('click', (e) => {
   const t = e.target as HTMLElement;
@@ -620,6 +973,7 @@ $('cmp-body').addEventListener('click', (e) => {
   const remove = t.closest<HTMLButtonElement>('[data-remove]');
   if (open) {
     const sc = state.compare[Number(open.dataset.open)];
+    followNow = false;
     set({ site: sc.site, timeMs: sc.timeMs, tab: 'analyse' }, 'site', 'time', 'tab');
   } else if (remove) {
     state.compare = state.compare.filter((_, i) => i !== Number(remove.dataset.remove));
@@ -648,6 +1002,14 @@ $<HTMLFormElement>('rig').addEventListener('submit', (e) => e.preventDefault());
 
 $('face-sun').addEventListener('click', () => faceBody('sun'));
 $('face-earth').addEventListener('click', () => faceBody('earth'));
+$('play').addEventListener('click', () => setPlaying(!playing));
+$('paths').addEventListener('click', () => {
+  const on = $('paths').getAttribute('aria-pressed') !== 'true';
+  $('paths').setAttribute('aria-pressed', String(on));
+  sky?.setGuides(on);
+});
+// Taking hold of the sky stops it from following the Sun or Earth.
+$('sky').addEventListener('pointerdown', () => (following = false));
 $('sky-in').addEventListener('click', () => sky?.zoom(0.7));
 $('sky-out').addEventListener('click', () => sky?.zoom(1.43));
 
@@ -662,6 +1024,9 @@ function onWidth(el: HTMLElement, fn: () => void) {
 }
 onWidth($('lanes'), () => {
   if (state.tab === 'analyse' && series) renderLanes();
+});
+onWidth($('about'), () => {
+  if (state.tab === 'about') renderAbout();
 });
 onWidth($('cmp-body'), () => {
   if (state.tab === 'compare' && series) renderCompare();
@@ -678,9 +1043,32 @@ window.addEventListener('hashchange', () => {
   invalidate('site', 'time', 'tab', 'view', 'compare');
 });
 
+// --- Disclosures -------------------------------------------------------------
+// The detail sections start closed. Whatever a visitor opens stays open on their next visit.
+
+const OPEN_KEY = 'lls-open';
+const disclosures = [...document.querySelectorAll<HTMLDetailsElement>('details.more')];
+try {
+  const open: unknown = JSON.parse(localStorage.getItem(OPEN_KEY) ?? '[]');
+  if (Array.isArray(open)) disclosures.forEach((d) => (d.open = open.includes(d.id)));
+} catch {
+  // Storage is blocked or holds something else: everything starts closed.
+}
+disclosures.forEach((d) =>
+  d.addEventListener('toggle', () => {
+    try {
+      localStorage.setItem(OPEN_KEY, JSON.stringify(disclosures.filter((x) => x.open).map((x) => x.id)));
+    } catch {
+      // Not remembered this time.
+    }
+  }),
+);
+
 // --- Start -------------------------------------------------------------------
 
-$('method').innerHTML = methodHtml;
+writeFilterForm();
+$('about').innerHTML = aboutHtml;
+wireAbout($('about'));
 $<HTMLSelectElement>('span').value = String(state.spanDays);
 readHash();
 lastSiteKey = siteKey(state.site);

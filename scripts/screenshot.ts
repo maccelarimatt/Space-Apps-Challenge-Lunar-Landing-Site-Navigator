@@ -56,6 +56,11 @@ async function shot(name: string, hash: string, width: number, height: number, f
 const only = process.argv[4];
 const want = (n: string) => !only || only.split(',').includes(n);
 
+const openAll = async (p: Page) => {
+  await p.evaluate(() => document.querySelectorAll<HTMLDetailsElement>('details.more').forEach((d) => (d.open = true)));
+};
+
+if (want('default')) await shot('desktop-default', '', 1440, 900);
 if (want('desktop')) await shot('desktop', `site=${SITE}&t=${T}`, 1440, 900);
 if (want('map')) await shot('desktop-map', `site=${SITE}&t=${T}&view=map`, 1440, 900);
 if (want('map-hover'))
@@ -64,11 +69,34 @@ if (want('map-hover'))
     await p.mouse.move(700, 330);
   });
 if (want('analyse')) await shot('desktop-analyse', `site=${SITE}&t=${T}&tab=analyse`, 1440, 900);
+if (want('earth'))
+  await shot('desktop-analyse-earth', `site=-85.9902,2.0920&t=${T}&tab=analyse`, 1440, 900, false, async (p) => {
+    await p.click('#face-earth');
+    for (let i = 0; i < 4; i++) await p.click('#sky-in');
+  });
+if (want('away'))
+  await shot('desktop-analyse-away', `site=${SITE}&t=${T}&tab=analyse`, 1440, 900, false, async (p) => {
+    // Turn round: drag the sky so the Sun is behind the viewer.
+    await p.mouse.move(600, 300);
+    await p.mouse.down();
+    await p.mouse.move(600 - 5000, 330, { steps: 4 });
+    await p.mouse.up();
+    for (let i = 0; i < 3; i++) await p.click('#sky-out');
+  });
+if (want('paths'))
+  await shot('desktop-analyse-paths', `site=${SITE}&t=${T}&tab=analyse`, 1440, 900, false, async (p) => {
+    await p.click('#paths');
+  });
+if (want('custom')) await shot('desktop-custom', `site=-87.2000,95.0000&t=${T}`, 1440, 900);
 if (want('compare')) await shot('desktop-compare', `site=${SITE}&t=${T}&tab=compare&cmp=${CMP}`, 1440, 900);
-if (want('method')) await shot('desktop-method', `site=${SITE}&t=${T}&tab=method`, 1440, 900);
+if (want('about')) await shot('desktop-about', `site=${SITE}&t=${T}&tab=about`, 1440, 900, true);
+if (want('mobile-about')) await shot('mobile-about', `site=${SITE}&t=${T}&tab=about`, 390, 844, true);
 if (want('apollo')) await shot('desktop-apollo', `site=0.6742,23.4731&t=${T}&tab=analyse`, 1440, 900);
 if (want('small')) await shot('desktop-1280', `site=${SITE}&t=${T}`, 1280, 720);
 if (want('mobile')) await shot('mobile', `site=${SITE}&t=${T}`, 390, 844, true);
 if (want('mobile-analyse')) await shot('mobile-analyse', `site=${SITE}&t=${T}&tab=analyse`, 390, 844, true);
+// Last, because the app remembers which detail sections were opened.
+if (want('open')) await shot('desktop-open', `site=${SITE}&t=${T}`, 1440, 900, false, openAll);
+if (want('analyse-open')) await shot('desktop-analyse-open', `site=${SITE}&t=${T}&tab=analyse`, 1440, 900, false, openAll);
 
 await browser.close();

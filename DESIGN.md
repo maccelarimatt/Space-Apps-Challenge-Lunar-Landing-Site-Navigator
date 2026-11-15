@@ -1,5 +1,5 @@
 ---
-name: Lunar Landing Site Navigator
+name: Selene’s Compass
 description: A matte black catalogue sleeve where white hairlines carry the interface and colour appears only as decoded Sun, Earth and problem data.
 colors:
   bg: "#0c0c0c"
@@ -69,6 +69,10 @@ typography:
     fontWeight: 400
     lineHeight: 1.3
     letterSpacing: "0.2em"
+  math:
+    fontFamily: "'Cambria Math', 'STIX Two Math', 'Latin Modern Math', math"
+    fontSize: "19px"
+    fontWeight: 400
   label-data:
     fontFamily: "'Marcellus SC', 'Times New Roman', serif"
     fontSize: "12px"
@@ -145,7 +149,7 @@ components:
     padding: "12px"
 ---
 
-# Design System: Lunar Landing Site Navigator
+# Design System: Selene’s Compass
 
 ## Overview
 
@@ -204,11 +208,11 @@ A neutral black-to-white scale with no tint, and three saturated hues that appea
 **Character:** An engraved small-caps face gives the catalogue number and labels the look of lettering cut into a sleeve; a plain, even grotesque with tabular figures does all the reading and all the numbers. The two never swap jobs.
 
 ### Hierarchy
-- **Display** (400, 76px, line-height 0.9, 0.04em): the catalogue number of the selected site, once per screen. Steps to 60px at 1280px wide and below, 52px in short windows, and `clamp(48px, 15vw, 76px)` in the single-column layout.
-- **Headline** (400, 52px, line-height 1, 0.04em): page titles on the Compare and Method pages. 40px in the single-column layout.
+- **Display** (400, 76px, line-height 0.9, 0.04em): the catalogue number of the selected site, once per screen. A point the visitor chose has no number: it reads "Custom site" at 56px (44px at 1280px wide, 40px in short windows), with its coordinates standing in for the site name. Steps to 60px at 1280px wide and below, 52px in short windows, and `clamp(48px, 15vw, 76px)` in the single-column layout.
+- **Headline** (400, 52px, line-height 1, 0.04em): the title on the Compare page. 40px in the single-column layout. The About page title is set at Display size (76px), and its section heads at 30px in the same engraved face (26px in the single-column layout).
 - **Figure** (Public Sans 600, 22px, line-height 1.2): the three answer figures (Sun, Earth, both).
 - **Title** (Public Sans 600, 15px): the site name under the catalogue number.
-- **Prose** (Public Sans 400, 14px, line-height 1.6, max 72ch): long-form reading on the Method page only; its lede is 16px.
+- **Prose** (Public Sans 400, 14px, line-height 1.6, max 70ch): long-form reading on the About page only. Its lede is 17px. Equations there are native MathML in Cambria Math (falling back to STIX Two Math and Latin Modern Math), 19px on their own lines and 15px in the running text, with bold vectors from the Unicode bold alphabet.
 - **Body** (Public Sans 400, 13px, line-height 1.45, tabular figures): default text, controls, table cells. Emphasis is 600; the selected row and best value are 700.
 - **Secondary** (Public Sans 400, 12px): hints, captions, axis text, field labels, coordinates. Usually in Secondary Grey.
 - **Identifier** (Public Sans 600, 12px, 0.06em): small codes such as the site chip on the globe.
@@ -225,9 +229,9 @@ A neutral black-to-white scale with no tint, and three saturated hues that appea
 
 ## Layout
 
-On desktop the body is exactly one viewport tall (100dvh) and does not scroll; each column scrolls on its own if it must. A top bar (52px minimum, hairline beneath) holds the wordmark, four text tabs and the date and time controls. Below it sit three columns: a 264px site list, a fluid stage, and a 520px sleeve for the selected site. Compare and Method drop the sleeve and use two columns.
+On desktop the body is exactly one viewport tall (100dvh) and does not scroll; each column scrolls on its own if it must. A top bar (52px minimum, hairline beneath) holds the wordmark, four text tabs and the date and time controls. Below it sit three columns: a 264px site list, a fluid stage, and a 520px sleeve for the selected site. The site list belongs to choosing: it shows on Choose site, and on Compare, where clicking a site adds it to the comparison at the chosen date and coordinate entry is hidden. Analyse gives its column to the sky view (stage and sleeve only), and About is the page alone: a sticky contents list and one 760px reading column, centred, with figures set as plates between two Rules and numbered captions (Fig. 1 to Fig. 4). Its figures follow the same colour rules as the rest of the app: the Sun yellow and Earth blue only where they are the Sun and Earth, white for everything drawn as structure. Sources are listed as a numbered discography (S1, S2, …) with a small-caps label above each part of an entry.
 
-The stage is unframed: the globe or map sits directly on the black ground with no border, panel or card, and its controls are pinned to its corners. The sleeve reads top to bottom as catalogue number, status strip, site name, plot, figures, actions. On the Analyse tab the figures and actions move above the detail so the answer comes first.
+The stage is unframed: the globe or map sits directly on the black ground with no border, panel or card, and its controls are pinned to its corners. The sleeve reads top to bottom as catalogue number, status strip, site name with one plain sentence about the place, the three answer figures, then the plot and the actions. On the Analyse tab the actions follow the figures and the detail sits beneath. The first read is the answer; the working (coordinates and geometry, totals, the power model, coordinate entry) is folded into disclosures that start closed and stay open once a visitor opens them.
 
 Spacing is tight and irregular by purpose rather than a fixed step scale: 6px between adjacent controls, 8px to 12px inside groups, 24px outer gutter, 32px inset on the left of the sleeve, 20px to 24px between sections. Running text is capped between 62ch and 74ch.
 
@@ -263,6 +267,17 @@ Every control and container has square corners (0px radius). Borders are 1px; th
 ### Segmented toggle
 A white 1px frame around two or more borderless options. The pressed option is solid white with black 600-weight text; the others are white text on black. Padding 5px 14px, or 3px 12px in the small variant used in a section heading row.
 
+A lone toggle button (Now, in the top bar) follows the same rule: solid white with black 600-weight text while it is on, outline while it is off.
+
+### Disclosure
+A full-width row under a Rule that opens the detail beneath it. The row is a Label in Sleeve White (not grey, because it is operated), with a drawn 11px plus at the right that becomes a minus when open, in the same 1px strokes as the icon buttons. An optional 12px Secondary Grey result may sit right-aligned before the mark so the row still says something while closed. Hover fills the row with Lifted Black, as on a site row. Disclosures start closed and their open state is remembered per browser. Anything hidden in one must not be the only place an error or a loading state is shown.
+
+### Saved sites
+A site the visitor saves joins its own catalogue series, "MY 01", "MY 02", numbered in order and never reused, and is set in the same places and styles as an LLS number. An unsaved pin has no number and reads "Custom site". Under the site name sit small outline buttons (4px 10px, 12px text): "Save to My sites" for a pin, "Rename" and "Remove from My sites" for a saved site. Remove takes a second click to confirm. Renaming swaps the name for an inline field with a solid white "Save name" and an outline "Cancel". Saved sites lead the site list under "My sites" when there are any.
+
+### Filter bar
+On Compare, the common filters sit in one row of labelled selects and a checkbox, with "Sort by" last. The rest fold into a "More filters" disclosure as a grid of small number fields, whose summary shows how many are on. A one-line count ("Showing 2 of 5 scenarios.") with an outline "Clear filters" appears only while something is filtered. The column the table is sorted by has an underlined header and bold cells.
+
 ### Inputs / Fields
 - **Style:** Matte Black fill, 1px Control Hairline border, square, 6px 8px padding, 13px text. Border brightens to white on hover.
 - **Label:** a 12px Secondary Grey label stacked 3px above the field. Units sit after the field in white.
@@ -275,10 +290,13 @@ Text tabs in the top bar, 13px, Secondary Grey at rest, white on hover. The curr
 A full-width row: catalogue number in 12px Secondary Grey (46px column), site name, and the 30px status strip at the right. Rows are separated by a Soft Rule. Hover and selection fill the row with Lifted Black; the selected row is 700 weight and its number turns white.
 
 ### Status code strip (signature)
-Three adjoining blocks, always in the order Sun, Earth, both, 1px apart: yellow, blue, white. Each block is solid (in view), hatched at 45 degrees with a hue outline (partly hidden), or an empty grey outline (out of view). It appears at 30 by 8px in each site row and its key, and at 132 by 10px under the catalogue number.
+Three adjoining blocks, always in the order Sun, Earth, both, 1px apart: yellow, blue, white. Each block is solid (in view), hatched at 45 degrees with a hue outline (partly hidden), or an empty grey outline (out of view). It appears at 30 by 8px in each site row, and at 132 by 10px under the catalogue number.
+
+### Key
+Under the site list, the strip is explained one line per meaning: three lines for position and hue (the named block solid, the other two held back at 22% opacity), then three for fill (all three solid, striped, empty). Each line is a 30px strip, a white bold term and a grey phrase short enough to sit on one line in the 264px column. Under the window lanes the same fills are keyed in a single wrapping row, with the vermilion bracket for the longest hidden stretch.
 
 ### Figure readout
-Three columns between two Rules, divided by vertical Rules. Each holds a Data label preceded by an 8px square in its hue (hollow when the state is off), a 22px figure, and one or two 12px grey lines of qualification.
+Three columns between two Rules, divided by vertical Rules. Each holds a Data label preceded by an 8px square in its hue (hollow when the state is off), a 22px figure, and one or two 12px grey lines saying in plain words what the figure means for the lander ("of sunlight until it sets", "without a radio link until it rises"). Angles and other geometry belong in the Site details disclosure, not here.
 
 ### Ridge plot (signature)
 One white 1.1px line per lunar day, stacked top to bottom, peaks free to climb over the rows above. Each ridge is filled with the ground colour and sits on a Rule baseline; a hidden spell is a gap in the line. The lunar day holding the chosen date is the only coloured line, 2.4px in the hue of the body being plotted, with a dot and tick at the chosen time. Hover shows a dashed grey crosshair and a one-line reading beneath; click moves the date. **Motion:** when the site changes, the lines draw in once from left to right (1.1s, `cubic-bezier(0.16, 1, 0.3, 1)`, each row 40ms after the one above). This is the only entry animation in the system and it is removed under `prefers-reduced-motion`.
@@ -288,6 +306,9 @@ Horizontal bars on a shared time axis, one lane each for Sun, Earth and both, on
 
 ### Data table
 No outer border and no zebra striping. Header cells are 12px Secondary Grey above a Rule; body rows are separated by Soft Rules with 12px vertical padding; numeric columns are right-aligned. The best value in a column is 700 weight with a small tracked "most" tag beneath.
+
+### Sky view
+The view from the ground is a picture, like the globe, not a chart: lit lunar ground under a black sky, the Sun as a yellow disc and Earth with its real face and phase. Its lighting is depiction and follows the Sun's real direction. The Sun carries a tight glare (about three solar radii) that fades as terrain covers it; this is the one place a glow is allowed, because it depicts the Sun, and it never appears on interface. The skyline keeps a single fine white line so the edge that hides the Sun can be read exactly. Guide lines (the level line and the paths over the lunar day) are off until the Paths toggle is pressed. Play runs the clock; while it runs the date is shown in the corner of the picture.
 
 ### Stage overlays
 Labels over the globe, map and sky are plain text with a ground halo, or sit on a small Matte Black plate with no border. The selected site chip is the only bold label. Graticule lines are white at 32% opacity; Sun and Earth bearings are 1.6px lines in their hues.
@@ -308,7 +329,7 @@ Labels over the globe, map and sky are plain text with a ground halo, or sit on 
 ### Don't:
 - **Don't** put a data hue on a button, tab, border, heading or background.
 - **Don't** signal a state by colour alone, and never by red against green.
-- **Don't** add cast shadows, glow, blur, gradients or translucent panels; this must not read as a sci-fi game HUD.
+- **Don't** add cast shadows, glow, blur, gradients or translucent panels to the interface; this must not read as a sci-fi game HUD. (The Sun's glare inside the sky view is depiction, not interface.)
 - **Don't** show decorative telemetry: every figure on screen is computed.
 - **Don't** round the corners of controls, wrap sections in cards, or frame the Moon.
 - **Don't** introduce a third small text size or set anything below 12px.

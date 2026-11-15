@@ -200,6 +200,71 @@ input::placeholder {
   padding: 3px 12px;
 }
 
+/* A lone toggle: solid white while it is on, like the pressed half of a segment. */
+#now[aria-pressed='true'],
+.sky-tools button[aria-pressed='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+  font-weight: 600;
+}
+
+/* Disclosure: a ruled row that opens the detail beneath it. Closed by default,
+   so the first read is the answer and the working is one click away. */
+
+.more {
+  border-top: 1px solid var(--rule);
+}
+
+.more > summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 -6px;
+  padding: 9px 6px;
+  list-style: none;
+  cursor: pointer;
+  font: 400 13px/1.3 var(--caps);
+  letter-spacing: 0.2em;
+}
+
+.more > summary::-webkit-details-marker {
+  display: none;
+}
+
+.more > summary:hover {
+  background: var(--lift);
+}
+
+/* An optional one-line result that stays readable while the row is closed. */
+.more > summary span {
+  flex: 1;
+  text-align: right;
+  font: 400 12px/1.3 var(--sans);
+  letter-spacing: 0;
+  color: var(--dim);
+}
+
+/* Plus when closed, minus when open: the same strokes as the zoom buttons. */
+.more > summary::after {
+  content: '';
+  flex: none;
+  width: 11px;
+  height: 11px;
+  margin-left: auto;
+  background:
+    linear-gradient(var(--ink), var(--ink)) center / 100% 1px no-repeat,
+    linear-gradient(var(--ink), var(--ink)) center / 1px 100% no-repeat;
+}
+
+.more[open] > summary::after {
+  background: linear-gradient(var(--ink), var(--ink)) center / 100% 1px no-repeat;
+}
+
+.more > :not(summary):last-child {
+  margin-bottom: 14px;
+}
+
 /* Top bar */
 
 .bar {
@@ -275,14 +340,33 @@ input::placeholder {
   min-height: 0;
 }
 
-.app[data-tab='compare'],
-.app[data-tab='method'] {
+/* Sites are chosen on Choose site. Compare keeps the list for adding scenarios;
+   Analyse and About give its column to the content. */
+.app[data-tab='compare'] {
   grid-template-columns: 264px minmax(0, 1fr);
 }
 
+.app[data-tab='analyse'] {
+  grid-template-columns: minmax(0, 1fr) 520px;
+}
+
+.app[data-tab='about'] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.app[data-tab='analyse'] .sites,
+.app[data-tab='about'] .sites,
+.app[data-tab='compare'] #d-goto,
 .app[data-tab='compare'] .sleeve,
-.app[data-tab='method'] .sleeve {
+.app[data-tab='about'] .sleeve {
   display: none;
+}
+
+@media (min-width: 981px) {
+  .app[data-tab='analyse'] .skywrap,
+  .app[data-tab='about'] .about {
+    padding-left: 24px;
+  }
 }
 
 [data-for] {
@@ -292,7 +376,7 @@ input::placeholder {
 .app[data-tab='choose'] [data-for='choose'],
 .app[data-tab='analyse'] [data-for='analyse'],
 .app[data-tab='compare'] [data-for='compare'],
-.app[data-tab='method'] [data-for='method'] {
+.app[data-tab='about'] [data-for='about'] {
   display: var(--show, block);
 }
 
@@ -319,8 +403,181 @@ main:focus {
   margin: 24px 0 6px;
 }
 
-.goto h2 {
+.sites h2:first-child,
+.sites .sites-hint + h2 {
   margin-top: 0;
+}
+
+.sites-hint {
+  margin-bottom: 18px;
+  color: var(--dim);
+}
+
+/* My sites sits first. With none saved, the catalogue heading takes the top spot. */
+.sites .mine-block h2,
+.sites .mine-block[hidden] + h2 {
+  margin-top: 0;
+}
+
+.sites-none {
+  margin-top: 4px;
+  color: var(--dim);
+}
+
+/* Save, rename and remove: small outline buttons under the site name. */
+.mine-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-top: 10px;
+}
+
+.mine-tools:empty {
+  display: none;
+}
+
+.mine-tools button,
+.rename button {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.mine-tools span {
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.rename {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+  max-width: 440px;
+}
+
+.rename label {
+  flex: 1;
+}
+
+.rename input {
+  width: 100%;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+/* Compare filters: the common ones in one row, the rest folded beneath. */
+
+.filters {
+  margin-top: 16px;
+  max-width: 980px;
+}
+
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px 14px;
+}
+
+.filter-row label,
+.filter-grid label,
+.filter-grid legend {
+  display: grid;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.filter-row select {
+  font-size: 13px;
+  padding: 7px 8px;
+}
+
+.filter-row label.check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-bottom: 8px;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.filters .more {
+  margin-top: 14px;
+}
+
+.filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px 18px;
+  padding: 4px 0 14px;
+}
+
+.filter-grid fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.filter-grid legend {
+  padding: 0;
+  margin-bottom: 3px;
+}
+
+.filter-grid label > span,
+.filter-grid fieldset > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink);
+  font-size: 13px;
+}
+
+.filter-grid input {
+  width: 76px;
+  font-size: 13px;
+}
+
+.filter-count {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 28px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.filter-count button {
+  padding: 3px 10px;
+  font-size: 12px;
+}
+
+/* The share in view as hours, under the percentage. */
+.cmp .sub {
+  display: block;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--dim);
+}
+
+.cmp thead th.sorted {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.cmp td.sorted {
+  font-weight: 700;
+}
+
+.sites .more {
+  margin-top: 16px;
+}
+
+.goto {
+  padding-top: 2px;
 }
 
 .goto-row {
@@ -419,17 +676,78 @@ main:focus {
   box-shadow: inset 0 0 0 1px var(--c);
 }
 
-.code-key {
-  margin-top: 16px;
+/* Key: one line per block colour, then one per fill. */
+
+.key {
+  margin-top: 24px;
+}
+
+.key .hint {
+  margin-top: 0;
+}
+
+.key-list {
+  display: grid;
+  gap: 7px;
+  margin-top: 10px;
   font-size: 12px;
   color: var(--dim);
 }
 
-.code-key .code {
-  display: inline-flex;
-  width: 30px;
-  margin-right: 6px;
-  vertical-align: 0;
+.key-list + .key-list {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule-soft);
+}
+
+.key-list li {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 10px;
+}
+
+.key-list .code {
+  translate: 0 -1px;
+}
+
+.key-list b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* The blocks a key line is not about, held back so the one it names stands out. */
+.code .dim {
+  opacity: 0.22;
+}
+
+.lane-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.lane-key li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.lane-key .code {
+  width: 20px;
+}
+
+.lane-key .gap-key {
+  width: 20px;
+  margin: 0;
+}
+
+/* A custom site has no catalogue number; its label is set smaller so it fits the column. */
+.sleeve-head h1.custom {
+  font-size: 56px;
 }
 
 /* Stage: the Moon, unframed */
@@ -709,7 +1027,8 @@ main:focus {
 }
 
 .map-zoom button,
-.sky-tools button:has(svg) {
+#sky-in,
+#sky-out {
   width: 30px;
   height: 30px;
   padding: 0;
@@ -757,15 +1076,23 @@ main:focus {
   font-weight: 600;
 }
 
-.sleeve-head .ll,
-.sleeve-head .note {
+.sleeve-head .note,
+.sleeve-head .more p {
   color: var(--dim);
+  max-width: 62ch;
+  text-wrap: pretty;
 }
 
 .sleeve-head .note {
   margin-top: 4px;
-  max-width: 62ch;
-  text-wrap: pretty;
+}
+
+.sleeve-head .more {
+  margin-top: 14px;
+}
+
+.sleeve-head .more p + p {
+  margin-top: 4px;
 }
 
 .pane {
@@ -862,11 +1189,10 @@ main:focus {
   font-size: 12px;
 }
 
+/* The answer sits directly under the site, above the plot and the detail. */
 .figs {
-  order: 2;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-top: 8px;
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
 }
@@ -952,21 +1278,28 @@ main:focus {
   color: var(--dim);
 }
 
-/* Analyse: the answer and the actions first, the detail beneath. */
+/* Analyse: the actions follow the answer, the detail beneath. */
 
-.app[data-tab='analyse'] .figs,
 .app[data-tab='analyse'] .btns,
 .app[data-tab='analyse'] .status {
   order: 0;
 }
 
-.app[data-tab='analyse'] .figs {
-  margin-top: 18px;
+.app[data-tab='analyse'] .pane {
+  margin-top: 20px;
+  padding-bottom: 22px;
 }
 
-.app[data-tab='analyse'] .pane {
-  margin-top: 4px;
-  padding-bottom: 22px;
+.app[data-tab='analyse'] .status:not(:empty) {
+  margin-bottom: 0;
+}
+
+.pane .more {
+  margin-top: 16px;
+}
+
+.pane .more + .more {
+  margin-top: 0;
 }
 
 .gap-key {
@@ -1037,8 +1370,7 @@ main:focus {
   display: grid;
   grid-template-columns: 1fr 1fr;
   column-gap: 24px;
-  margin-top: 14px;
-  border-top: 1px solid var(--rule);
+  border-top: 1px solid var(--rule-soft);
 }
 
 .gaps div {
@@ -1074,11 +1406,6 @@ main:focus {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px 12px;
-  margin-top: 20px;
-}
-
-.rig h2 {
-  grid-column: 1 / -1;
 }
 
 .rig label {
@@ -1100,7 +1427,7 @@ main:focus {
 }
 
 .power {
-  margin: 10px 0 18px;
+  margin: 2px 0 14px;
   max-width: 68ch;
   text-wrap: pretty;
 }
@@ -1155,8 +1482,40 @@ main:focus {
 
 .sky-tools {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin-top: 8px;
+}
+
+#play {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 84px;
+}
+
+#play .i-pause,
+#play[aria-pressed='true'] .i-play {
+  display: none;
+}
+
+#play[aria-pressed='true'] .i-pause {
+  display: inline;
+}
+
+#paths {
+  margin-left: auto;
+}
+
+/* The date the picture is drawn for, so it can be read while the clock runs. */
+.sky-when {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 1;
+  font-size: 12px;
+  color: var(--dim);
+  pointer-events: none;
 }
 
 .strip-title {
@@ -1242,17 +1601,16 @@ main:focus {
   pointer-events: none;
 }
 
-/* Compare and Method pages */
+/* Compare and About pages */
 
 .compare,
-.method {
+.about {
   overflow: auto;
   min-height: 0;
   padding: 26px 32px 48px 8px;
 }
 
-.page-head h1,
-.prose h1 {
+.page-head h1 {
   font: 400 52px/1 var(--caps);
   letter-spacing: 0.04em;
 }
@@ -1400,57 +1758,586 @@ main:focus {
   color: var(--ink);
 }
 
-.prose {
-  max-width: 72ch;
-  font-size: 14px;
-  line-height: 1.6;
+/* About: a long read set like a record's liner notes. Contents on the left,
+   one measured column, figures as plates between hairlines. */
+
+.about-page {
+  display: grid;
+  grid-template-columns: 172px minmax(0, 760px);
+  column-gap: 64px;
+  max-width: 996px;
+  margin: 0 auto;
 }
 
-.prose .lede {
-  margin-top: 18px;
-  font-size: 16px;
-  text-wrap: pretty;
+.toc {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  padding-top: 10px;
 }
 
-.prose h2 {
-  margin: 34px 0 10px;
-  font-size: 15px;
+.toc p {
+  margin-bottom: 10px;
+  font: 400 13px/1.3 var(--caps);
+  letter-spacing: 0.2em;
+  color: var(--dim);
+}
+
+.toc li {
+  border-top: 1px solid var(--rule-soft);
+}
+
+.toc button {
+  display: block;
+  width: 100%;
+  padding: 7px 0;
+  border: 0;
+  background: none;
+  color: var(--dim);
+  text-align: left;
+}
+
+.toc button:hover {
   color: var(--ink);
 }
 
-.prose p,
-.prose li {
+.about-body {
+  font-size: 14px;
+  line-height: 1.6;
   color: #d0d0d0;
 }
 
-.prose ul {
-  display: grid;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.prose li {
-  padding-left: 16px;
-  position: relative;
-}
-
-.prose li::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0.72em;
-  width: 8px;
-  height: 1px;
-  background: var(--line);
-}
-
-.prose b {
+.about-body b {
   color: var(--ink);
   font-weight: 600;
 }
 
-.prose .fine {
-  margin-top: 34px;
+.about-body a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+
+.about-body a:hover {
+  text-decoration-color: var(--ink);
+}
+
+.about-head h1 {
+  font: 400 76px/0.92 var(--caps);
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+
+.about-head .sub {
+  margin-top: 14px;
+  font: 400 13px/1.3 var(--caps);
+  letter-spacing: 0.2em;
+  color: var(--dim);
+}
+
+.about-head .lede {
+  margin-top: 26px;
+  max-width: 62ch;
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
+.about-head .name-note {
+  margin-top: 12px;
+  color: var(--dim);
+}
+
+.about-body section {
+  margin-top: 72px;
+  scroll-margin-top: 16px;
+}
+
+.about-head {
+  scroll-margin-top: 16px;
+}
+
+.about-body h2 {
+  padding-top: 18px;
+  border-top: 1px solid var(--rule);
+  font: 400 30px/1.1 var(--caps);
+  letter-spacing: 0.05em;
+  color: var(--ink);
+}
+
+.about-body h3 {
+  margin: 34px 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.about-body .intro {
+  margin-top: 12px;
+  max-width: 64ch;
+}
+
+.about-body p + p {
+  margin-top: 10px;
+}
+
+/* Figures: a plate between two hairlines, numbered caption beneath. */
+
+.plate {
+  margin: 40px 0 0;
+  padding: 16px 0 12px;
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+
+.fig-inline {
+  margin: 18px 0 6px;
+}
+
+.about-body figcaption {
+  margin-top: 10px;
+  max-width: 70ch;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--dim);
+}
+
+.about-body figcaption b {
+  margin-right: 6px;
+}
+
+.fig-wait {
+  padding: 60px 0;
+  text-align: center;
+  color: var(--dim);
+}
+
+.sky-fig svg,
+.cp-host svg {
+  display: block;
+}
+
+.sk-ground {
+  fill: #1e1e1e;
+}
+
+.sk-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.2;
+}
+
+.sk-grid {
+  stroke: var(--rule-soft);
+}
+
+.sk-grid.level {
+  stroke: var(--line);
+  stroke-dasharray: 3 4;
+}
+
+.sk-axis,
+.cp-axis {
+  fill: var(--dim);
+  font-size: 12px;
+}
+
+.sk-track {
+  fill: none;
+  stroke-width: 1.6;
+}
+
+.sk-track.sun,
+circle.sun {
+  stroke: var(--sun);
+}
+
+.sk-track.earth,
+circle.earth {
+  stroke: var(--earth);
+}
+
+.sky-fig circle.sun {
+  fill: var(--sun);
+}
+
+.sky-fig circle.earth {
+  fill: var(--earth);
+}
+
+.sk-tag {
+  font: 400 12px var(--caps);
+  letter-spacing: 0.12em;
+  paint-order: stroke;
+  stroke: var(--bg);
+  stroke-width: 5px;
+  stroke-linejoin: round;
+}
+
+.sk-tag.sun {
+  fill: var(--sun);
+}
+
+.sk-tag.earth {
+  fill: var(--earth);
+}
+
+/* Diagrams: white hairline drawings, the Sun's colour only on the Sun. */
+
+.diagram-wrap {
+  overflow-x: auto;
+}
+
+.diagram {
+  display: block;
+  width: 100%;
+  min-width: 540px;
+  height: auto;
+}
+
+.diagram text {
+  fill: var(--dim);
+  font: 400 13px var(--sans);
+}
+
+.diagram .dg-ink {
+  fill: var(--ink);
+}
+
+.diagram .dg-on-sun {
+  fill: var(--bg);
+  font-weight: 600;
+}
+
+.diagram .dg-big {
+  fill: var(--ink);
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.dg-ground {
+  fill: #1e1e1e;
+}
+
+.dg-sphere {
+  fill: none;
+  stroke: var(--line);
+  stroke-dasharray: 3 4;
+}
+
+.dg-level {
+  stroke: var(--line);
+  stroke-dasharray: 3 4;
+}
+
+.dg-sight {
+  stroke: var(--ink);
+  stroke-width: 1.2;
+}
+
+.dg-angle,
+.dg-dist {
+  fill: none;
+  stroke: var(--ink);
+}
+
+.dg-mast {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.dg-eye,
+.dg-peak,
+.dg-centre {
+  fill: var(--ink);
+}
+
+.dg-disc-out {
+  fill: none;
+  stroke: var(--sun);
+  stroke-width: 1.2;
+  stroke-dasharray: 3 3;
+}
+
+.dg-disc {
+  fill: var(--sun);
+}
+
+.dg-skyline {
+  stroke: var(--ink);
+  stroke-width: 1.2;
+}
+
+.dg-r,
+.dg-c {
+  stroke: var(--bg);
+  stroke-width: 1.5;
+}
+
+.dg-c {
+  stroke: var(--ink);
+}
+
+.dg-c.on-sun {
+  stroke: var(--bg);
+}
+
+.slider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.slider input {
+  flex: 0 1 260px;
+  padding: 0;
+  border: 0;
+}
+
+/* Equations: set on their own between soft rules, each line centred. */
+
+.eq {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0 14px;
+  padding: 18px 0;
+  border-top: 1px solid var(--rule-soft);
+  border-bottom: 1px solid var(--rule-soft);
+  overflow-x: auto;
+  color: var(--ink);
+}
+
+.about-body math {
+  font-family: 'Cambria Math', 'STIX Two Math', 'Latin Modern Math', math;
+}
+
+.eq math {
+  font-size: 19px;
+}
+
+.where {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 6px 18px;
+  font-size: 13px;
+}
+
+.where dt {
+  color: var(--ink);
+  text-align: right;
+}
+
+.where math {
+  font-size: 15px;
+}
+
+.cite {
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+/* The four steps: a large engraved numeral beside each. */
+
+.step {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  margin-top: 40px;
+}
+
+.step-no {
+  font: 400 44px/0.9 var(--caps);
+  color: var(--dim);
+}
+
+.step h3 {
+  margin-top: 0;
+  font: 400 19px/1.25 var(--caps);
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+
+/* Comparison chart: published ring, this tool's solid dot, a hairline between. */
+
+.cp-key {
+  display: flex;
+  gap: 22px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.cp-key li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cp-key i {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+}
+
+.cp-key-pub {
+  border: 1.5px solid var(--ink);
+}
+
+.cp-key-ours {
+  background: var(--sun);
+}
+
+.cp-grid {
+  stroke: var(--rule-soft);
+}
+
+.cp-label {
+  fill: var(--ink);
+  font-size: 13px;
+}
+
+.cp-diff {
+  fill: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.cp-link {
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+
+.cp-pub {
+  fill: var(--bg);
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.cp-ours {
+  fill: var(--sun);
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+
+.ab-table {
+  width: 100%;
+  min-width: 620px;
+  margin-top: 14px;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.ab-table th,
+.ab-table td {
+  padding: 8px 10px 8px 0;
+  text-align: left;
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.ab-table thead th {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--dim);
+  vertical-align: bottom;
+}
+
+.ab-table thead tr:last-child th {
+  border-bottom-color: var(--rule);
+}
+
+.ab-table .num {
+  text-align: right;
+}
+
+.ab-table tbody th {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.ab-table .ll {
+  display: block;
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--dim);
+}
+
+.ab-table td {
+  color: var(--ink);
+}
+
+/* Lists in the running text: a short hairline dash, not a bullet. */
+
+.about-body .plain {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  max-width: 70ch;
+}
+
+.about-body .plain li {
+  position: relative;
+  padding-left: 18px;
+}
+
+.about-body .plain li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.78em;
+  width: 9px;
+  height: 1px;
+  background: var(--line);
+}
+
+/* Sources: a numbered discography. */
+
+.refs {
+  margin: 20px 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.refs > li {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  padding: 16px 0;
+  border-top: 1px solid var(--rule-soft);
+  scroll-margin-top: 16px;
+}
+
+.refs > li:last-child {
+  border-bottom: 1px solid var(--rule-soft);
+}
+
+.ref-no {
+  font: 400 22px/1.1 var(--caps);
+  letter-spacing: 0.04em;
+  color: var(--dim);
+}
+
+.refs p {
+  max-width: 70ch;
+}
+
+.refs .cite-line {
+  color: var(--ink);
+}
+
+.refs .tag {
+  display: block;
+  margin-top: 6px;
+  font: 400 12px/1.3 var(--caps);
+  letter-spacing: 0.1em;
+  color: var(--dim);
+}
+
+.about-body .fine {
+  margin-top: 40px;
   font-size: 12px;
   color: var(--dim);
 }
@@ -1480,9 +2367,16 @@ main:focus {
     grid-template-columns: 250px minmax(0, 1fr) 420px;
   }
 
-  .app[data-tab='compare'],
-  .app[data-tab='method'] {
+  .app[data-tab='compare'] {
     grid-template-columns: 250px minmax(0, 1fr);
+  }
+
+  .app[data-tab='analyse'] {
+    grid-template-columns: minmax(0, 1fr) 420px;
+  }
+
+  .sleeve-head h1.custom {
+    font-size: 44px;
   }
 
   .sites {
@@ -1511,6 +2405,10 @@ main:focus {
 
   .sleeve-head h1 {
     font-size: 52px;
+  }
+
+  .sleeve-head h1.custom {
+    font-size: 40px;
   }
 
   .sleeve-head .nm {
@@ -1598,7 +2496,8 @@ main:focus {
 
   .app,
   .app[data-tab='compare'],
-  .app[data-tab='method'] {
+  .app[data-tab='analyse'],
+  .app[data-tab='about'] {
     display: flex;
     flex-direction: column;
   }
@@ -1655,7 +2554,7 @@ main:focus {
   }
 
   .compare,
-  .method {
+  .about {
     padding: 20px 16px 40px;
     overflow: visible;
   }
@@ -1664,16 +2563,54 @@ main:focus {
     overflow-x: auto;
   }
 
-  .page-head h1,
-  .prose h1 {
+  .page-head h1 {
     font-size: 40px;
+  }
+
+  .about-page {
+    display: block;
+  }
+
+  .toc {
+    display: none;
+  }
+
+  .about-head h1 {
+    font-size: clamp(44px, 13vw, 76px);
+  }
+
+  .about-body h2 {
+    font-size: 26px;
+  }
+
+  .step {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .step-no {
+    font-size: 34px;
+  }
+
+  .refs > li {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .where {
+    grid-template-columns: 1fr;
+    gap: 2px 0;
+  }
+
+  .where dt {
+    margin-top: 8px;
+    text-align: left;
   }
 
   h2,
   .hint,
   .readout,
   .fig em,
-  .code-key,
+  .key-list,
+  .lane-key,
   .cap,
   .site .no {
     font-size: 13px;
@@ -1710,6 +2647,15 @@ main:focus {
 }
 
 @media (max-width: 560px) {
+  /* Two filters to a row on a phone; the paired ranges take a whole row. */
+  .filter-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .filter-grid fieldset {
+    grid-column: 1 / -1;
+  }
+
   .figs {
     grid-template-columns: 1fr;
   }

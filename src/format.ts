@@ -4,6 +4,10 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
+/** Makes text safe to place inside HTML, for names a visitor typed. */
+export const esc = (s: string) =>
+  s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!);
+
 /** "4 d 07 h", "31 h" or "12 min". */
 export function duration(ms: number): string {
   const mins = Math.max(0, Math.round(ms / 60_000));

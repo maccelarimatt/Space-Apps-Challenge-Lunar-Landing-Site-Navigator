@@ -22,7 +22,7 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { localAxes, surfaceNormal, type LatLon, type Vec3 } from '../astro/frame';
-import { catalogueNo, siteKey, type Site } from '../sites';
+import { catalogueNo, siteKey, siteTitle, type Site } from '../sites';
 
 const DATA = `${import.meta.env.BASE_URL}data/`;
 const D2R = Math.PI / 180;
@@ -266,7 +266,7 @@ export function createGlobe(host: HTMLElement, opts: GlobeOptions): GlobeApi | n
           pinEls.set(key, el);
         }
         el.querySelector('b')!.textContent = catalogueNo(site);
-        el.setAttribute('aria-label', `${catalogueNo(site)} ${site.name}`);
+        el.setAttribute('aria-label', siteTitle(site));
         el.title = site.name;
         el.classList.toggle('on', siteKey(site) === siteKey(sel));
       }

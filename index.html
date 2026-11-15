@@ -3,12 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Lunar Landing Site Navigator</title>
+    <title>Selene’s Compass</title>
     <meta
       name="description"
-      content="Compare lunar landing sites and dates. See where the Sun and Earth sit against the real horizon, and how long solar power and a direct link to Earth last."
+      content="Selene’s Compass, a lunar landing site navigator. Compare landing sites and dates by where the Sun and Earth sit against the real horizon, and how long solar power and a direct link to Earth last."
     />
-    <meta name="generator" content="Code written with AI assistance (Claude, Anthropic). See the Method tab." />
+    <meta name="generator" content="Code written with AI assistance (Claude, Anthropic). See the About tab." />
     <meta name="color-scheme" content="dark" />
     <meta name="theme-color" content="#0c0c0c" />
     <link
@@ -34,12 +34,12 @@
     <a class="skip" href="#main">Skip to the main view</a>
 
     <header class="bar">
-      <p class="brand">Lunar Landing Site Navigator</p>
+      <p class="brand">Selene’s Compass</p>
       <nav class="tabs" aria-label="Sections">
         <button type="button" data-tab="choose" aria-current="page">Choose site</button>
         <button type="button" data-tab="analyse">Analyse</button>
         <button type="button" data-tab="compare">Compare <span id="cmp-count"></span></button>
-        <button type="button" data-tab="method">Method</button>
+        <button type="button" data-tab="about">About</button>
       </nav>
       <form class="when" id="when" aria-label="Date and time, UTC">
         <span class="when-fields">
@@ -50,30 +50,48 @@
         <span class="when-steps">
           <button type="button" data-shift="-1" aria-label="One day earlier">−1 d</button>
           <button type="button" data-shift="1" aria-label="One day later">+1 d</button>
-          <button type="button" id="now">Now</button>
+          <button type="button" id="now" aria-pressed="true">Now</button>
         </span>
       </form>
     </header>
 
     <div class="app" id="app" data-tab="choose">
       <aside class="sites" aria-label="Landing sites">
-        <form class="goto" id="goto" novalidate>
-          <h2>Go to coordinates</h2>
-          <div class="goto-row">
-            <label>Latitude<input id="lat" inputmode="text" autocomplete="off" placeholder="-89.45" /></label>
-            <label>Longitude E<input id="lon" inputmode="text" autocomplete="off" placeholder="222.69" /></label>
-          </div>
-          <button type="submit">Drop pin</button>
-          <p class="err" id="goto-err" role="alert" hidden></p>
-        </form>
-        <h2>South pole <span>real terrain</span></h2>
+        <p class="sites-hint" data-for="compare">Click a site to add it to Compare, landing at the date and time above. The filters on the right narrow this list too.</p>
+        <div class="mine-block" id="mine-block" hidden>
+          <h2>My sites <span>saved in this browser</span></h2>
+          <ul class="site-list" id="list-mine"></ul>
+        </div>
+        <h2 id="h-pole">South pole <span>real terrain</span></h2>
         <ul class="site-list" id="list-pole"></ul>
-        <h2>Elsewhere <span>smooth horizon</span></h2>
+        <h2 id="h-else">Elsewhere <span>smooth horizon</span></h2>
         <ul class="site-list" id="list-else"></ul>
-        <p class="code-key">
-          <span class="code"><i class="sun full"></i><i class="earth full"></i><i class="both full"></i></span>
-          Sun, Earth and both in view at the chosen time. Hatched means partly hidden; empty means out of view.
-        </p>
+        <p class="sites-none" id="sites-none" hidden>No sites match the filters.</p>
+        <section class="key" aria-labelledby="key-h">
+          <h2 id="key-h">Key</h2>
+          <p class="hint">Three blocks per site, at the date and time above.</p>
+          <ul class="key-list">
+            <li><span class="code" aria-hidden="true"><i class="sun full"></i><i class="earth full dim"></i><i class="both full dim"></i></span><span><b>Yellow:</b> the Sun, for solar power</span></li>
+            <li><span class="code" aria-hidden="true"><i class="sun full dim"></i><i class="earth full"></i><i class="both full dim"></i></span><span><b>Blue:</b> Earth, for a radio link</span></li>
+            <li><span class="code" aria-hidden="true"><i class="sun full dim"></i><i class="earth full dim"></i><i class="both full"></i></span><span><b>White:</b> Sun and Earth together</span></li>
+          </ul>
+          <ul class="key-list">
+            <li><span class="code" aria-hidden="true"><i class="sun full"></i><i class="earth full"></i><i class="both full"></i></span><span><b>Solid:</b> whole disc in view</span></li>
+            <li><span class="code" aria-hidden="true"><i class="sun part"></i><i class="earth part"></i><i class="both part"></i></span><span><b>Striped:</b> partly behind terrain</span></li>
+            <li><span class="code" aria-hidden="true"><i class="sun"></i><i class="earth"></i><i class="both"></i></span><span><b>Empty:</b> below the skyline</span></li>
+          </ul>
+        </section>
+        <details class="more" id="d-goto">
+          <summary>Go to coordinates</summary>
+          <form class="goto" id="goto" aria-label="Go to coordinates" novalidate>
+            <div class="goto-row">
+              <label>Latitude<input id="lat" inputmode="text" autocomplete="off" placeholder="-89.45" /></label>
+              <label>Longitude E<input id="lon" inputmode="text" autocomplete="off" placeholder="222.69" /></label>
+            </div>
+            <button type="submit">Drop pin</button>
+            <p class="err" id="goto-err" role="alert" hidden></p>
+          </form>
+        </details>
       </aside>
 
       <main id="main" tabindex="-1">
@@ -88,8 +106,12 @@
         </section>
 
         <section class="skywrap" data-for="analyse" aria-label="The sky from the landing site">
-          <div class="sky" id="sky"></div>
+          <div class="sky" id="sky"><p class="sky-when" id="sky-when"></p></div>
           <div class="sky-tools" role="group" aria-label="Sky view controls">
+            <button type="button" id="play" aria-pressed="false" title="Run the clock forward, 12 hours a second">
+              <svg viewBox="0 0 12 12" aria-hidden="true"><path class="i-play" d="M3 1.5v9l7.5-4.5z" /><path class="i-pause" d="M3.5 1.5v9M8.5 1.5v9" /></svg>
+              <span>Play</span>
+            </button>
             <button type="button" id="face-sun">Face the Sun</button>
             <button type="button" id="face-earth">Face Earth</button>
             <button type="button" id="sky-in" aria-label="Zoom in">
@@ -98,6 +120,7 @@
             <button type="button" id="sky-out" aria-label="Zoom out">
               <svg viewBox="0 0 12 12" aria-hidden="true"><path d="M1 6h10" /></svg>
             </button>
+            <button type="button" id="paths" aria-pressed="false" title="The paths the Sun and Earth follow over the next 29.5 days, and the level line">Paths</button>
           </div>
           <h2 class="strip-title">Full horizon, north to north <span id="strip-src"></span></h2>
           <div class="strip-host" id="strip"></div>
@@ -119,11 +142,57 @@
               </label>
               <button type="button" id="cmp-add">Add current site and date</button>
             </div>
+            <form class="filters" id="filters" aria-label="Filter and sort the comparison">
+              <div class="filter-row">
+                <label>Sites
+                  <select id="f-source">
+                    <option value="all">All sites</option>
+                    <option value="lls">LLS catalogue</option>
+                    <option value="mine">My sites</option>
+                    <option value="pin">Unsaved pins</option>
+                  </select>
+                </label>
+                <label>Hemisphere
+                  <select id="f-hemi">
+                    <option value="all">Both</option>
+                    <option value="s">Southern</option>
+                    <option value="n">Northern</option>
+                  </select>
+                </label>
+                <label class="check"><input type="checkbox" id="f-terrain" /> Real terrain only</label>
+                <label>Sort by
+                  <select id="f-sort">
+                    <option value="added">Order added</option>
+                    <option value="sun">Most Sun in view</option>
+                    <option value="earth">Most Earth in view</option>
+                    <option value="both">Most of both</option>
+                    <option value="sunH">Most hours in sunlight</option>
+                    <option value="earthH">Most hours in sight of Earth</option>
+                    <option value="dark">Shortest dark stretch</option>
+                    <option value="nolink">Shortest stretch without Earth</option>
+                  </select>
+                </label>
+              </div>
+              <details class="more" id="d-filters">
+                <summary>More filters <span id="f-more-count"></span></summary>
+                <div class="filter-grid">
+                  <label>Sun in view at least<span><input type="number" id="f-minSun" min="0" max="100" step="5" placeholder="any" /> %</span></label>
+                  <label>Earth in view at least<span><input type="number" id="f-minEarth" min="0" max="100" step="5" placeholder="any" /> %</span></label>
+                  <label>Both at least<span><input type="number" id="f-minBoth" min="0" max="100" step="5" placeholder="any" /> %</span></label>
+                  <label>Longest dark stretch at most<span><input type="number" id="f-maxDarkH" min="0" step="12" placeholder="any" /> h</span></label>
+                  <label>Longest without Earth at most<span><input type="number" id="f-maxNoLinkH" min="0" step="12" placeholder="any" /> h</span></label>
+                  <fieldset><legend>Latitude, south negative</legend><span><input type="number" id="f-latFrom" min="-90" max="90" step="1" placeholder="−90" aria-label="Latitude from" /> to <input type="number" id="f-latTo" min="-90" max="90" step="1" placeholder="90" aria-label="Latitude to" /> °</span></fieldset>
+                  <fieldset><legend>Longitude east</legend><span><input type="number" id="f-lonFrom" min="0" max="360" step="5" placeholder="0" aria-label="Longitude from" /> to <input type="number" id="f-lonTo" min="0" max="360" step="5" placeholder="360" aria-label="Longitude to" /> °</span></fieldset>
+                </div>
+              </details>
+              <p class="filter-count"><span id="f-count" role="status"></span> <button type="button" id="f-clear" hidden>Clear filters</button></p>
+            </form>
+            <p class="status" id="cmp-status" role="status"></p>
           </header>
           <div class="cmp-scroll" id="cmp-body"></div>
         </section>
 
-        <section class="method" data-for="method" aria-label="Method and sources" id="method"></section>
+        <section class="about" data-for="about" aria-label="About Selene’s Compass" id="about"></section>
       </main>
 
       <aside class="sleeve" id="sleeve" aria-label="Selected site">
@@ -131,8 +200,19 @@
           <h1 id="s-no">LLS 01</h1>
           <p class="code big" id="s-code"></p>
           <p class="nm" id="s-name"></p>
-          <p class="ll" id="s-ll"></p>
+          <form class="rename" id="rename" hidden>
+            <label><span class="vh">Site name</span><input id="rename-input" maxlength="40" autocomplete="off" /></label>
+            <button type="submit" class="primary">Save name</button>
+            <button type="button" id="rename-cancel">Cancel</button>
+          </form>
+          <div class="mine-tools" id="mine-tools"></div>
           <p class="note" id="s-note"></p>
+          <details class="more" id="d-site">
+            <summary>Site details</summary>
+            <p id="s-ll"></p>
+            <p id="s-detail"></p>
+            <p id="s-geom"></p>
+          </details>
         </header>
 
         <div class="pane" data-for="choose">
@@ -149,18 +229,29 @@
         </div>
 
         <div class="pane" data-for="analyse">
-          <p class="power" id="power"></p>
           <div class="pane-head"><h2>The 29.5 days after this date</h2></div>
           <div class="lanes-host" id="lanes"></div>
-          <p class="hint">Solid: whole disc in view. Hatched: partly hidden by terrain. Empty: out of view. <span class="gap-key"></span> marks the longest stretch out of view. Click a bar to move the date.</p>
-          <dl class="gaps" id="gaps"></dl>
-          <form class="rig" id="rig">
-            <h2>Your lander</h2>
-            <label>Height above ground<span><input id="mast" type="number" min="0" max="200" step="1" value="2" /> m</span></label>
-            <label>Panel area<span><input id="area" type="number" min="0.1" max="500" step="0.1" value="4" /> m²</span></label>
-            <label>Panel efficiency<span><input id="eff" type="number" min="1" max="50" step="1" value="28" /> %</span></label>
-            <label>Power needed<span><input id="need" type="number" min="1" max="100000" step="10" value="300" /> W</span></label>
-          </form>
+          <ul class="lane-key" aria-label="Key to the bars">
+            <li><span class="code" aria-hidden="true"><i class="both full"></i></span>Whole disc in view</li>
+            <li><span class="code" aria-hidden="true"><i class="both part"></i></span>Partly hidden behind terrain</li>
+            <li><span class="code" aria-hidden="true"><i class="both"></i></span>Hidden below the skyline</li>
+            <li><span class="gap-key" aria-hidden="true"></span>Longest stretch hidden</li>
+          </ul>
+          <p class="hint">Click a bar to move the date there.</p>
+          <details class="more" id="d-gaps">
+            <summary>Totals and longest gaps</summary>
+            <dl class="gaps" id="gaps"></dl>
+          </details>
+          <details class="more" id="d-power">
+            <summary>Lander and solar power <span id="power-brief"></span></summary>
+            <p class="power" id="power"></p>
+            <form class="rig" id="rig" aria-label="Your lander">
+              <label>Height above ground<span><input id="mast" type="number" min="0" max="200" step="1" value="2" /> m</span></label>
+              <label>Panel area<span><input id="area" type="number" min="0.1" max="500" step="0.1" value="4" /> m²</span></label>
+              <label>Panel efficiency<span><input id="eff" type="number" min="1" max="50" step="1" value="28" /> %</span></label>
+              <label>Power needed<span><input id="need" type="number" min="1" max="100000" step="10" value="300" /> W</span></label>
+            </form>
+          </details>
         </div>
 
         <dl class="figs" id="figs"></dl>

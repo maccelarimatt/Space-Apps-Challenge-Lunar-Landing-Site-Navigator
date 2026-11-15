@@ -3,8 +3,11 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "Compare lunar landing sites and dates by Sun and Earth visibility above the local horizon. NASA Space Apps Challenge 2026. Code written with AI assistance (Claude); see README.",
+  "description": "Selene's Compass, a lunar landing site navigator. Compare lunar landing sites and dates by Sun and Earth visibility above the local horizon. NASA Space Apps Challenge 2026. Code written with AI assistance (Claude), see README.",
   "scripts": {
+    "start": "node scripts/server.mjs start",
+    "stop": "node scripts/server.mjs stop",
+    "status": "node scripts/server.mjs status",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",

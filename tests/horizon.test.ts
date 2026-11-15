@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { computeHorizon, demLatLon, demPixel, groundHeight, sphereHorizon } from '../src/astro/horizon';
-import { DAY_MS, HOUR_MS, sampleSeries, summarise } from '../src/astro/windows';
+import { DAY_MS, HOUR_MS, sampleSeries, summarise, viewAt } from '../src/astro/windows';
+import { CREST_LLS01, GLASER_TABLE_2 } from '../src/checks';
 import { loadDemFromDisk } from './helpers';
 
 const dem = loadDemFromDisk();
@@ -34,15 +35,37 @@ describe.skipIf(!dem)('south-pole terrain (needs npm run data)', () => {
     expect(y.earth).toBe(0);
   });
 
-  it('puts a high point on Shackleton’s rim near the published 85.5% illumination', () => {
-    // Gläser et al. (2018) report 85.5% for the rim; a 240 m grid and a 2 m mast will not match exactly.
-    const y = yearAt(-89.7786, 204.274);
-    expect(y.sun).toBeGreaterThan(0.8);
-    expect(y.sun).toBeLessThan(0.92);
-  });
+  // The About page quotes these figures. Each one is recomputed here exactly as
+  // the page describes it: 2 m above ground, hourly, 1 January 2017 to 1 January 2037.
+  const twentyYears = (lat: number, lon: number) => {
+    const site = { lat, lon };
+    const h = computeHorizon(dem, site, 2);
+    let n = 0;
+    let sum = 0;
+    let any = 0;
+    let run = 0;
+    let worst = 0;
+    for (let t = Date.UTC(2017, 0, 1); t < Date.UTC(2037, 0, 1); t += HOUR_MS) {
+      const f = viewAt(site, h, t).sun.fraction;
+      n++;
+      sum += f;
+      if (f > 0) any++;
+      run = f > 0 ? 0 : run + 1;
+      worst = Math.max(worst, run);
+    }
+    return { avg: (sum / n) * 100, vis: (any / n) * 100, shadowH: worst };
+  };
+
+  for (const c of [...GLASER_TABLE_2, { label: 'LLS 01', ...CREST_LLS01 }]) {
+    it(`matches the About page for ${c.label}`, () => {
+      const got = twentyYears(c.lat, c.lon);
+      expect(got.avg).toBeCloseTo(c.ours.avg, 0);
+      expect(got.vis).toBeCloseTo(c.ours.vis, 0);
+      expect(Math.abs(got.shadowH - c.ours.shadowH)).toBeLessThanOrEqual(1);
+    }, 60_000);
+  }
 
   it('finds the Shackleton to de Gerlache ridge sunlit for most of the year', () => {
-    // Published LOLA studies (Mazarico et al. 2011) put this crest near 90% average illumination.
     const y = yearAt(-89.4455, 222.686);
     expect(y.sun).toBeGreaterThan(0.85);
     expect(y.sun).toBeLessThan(0.95);

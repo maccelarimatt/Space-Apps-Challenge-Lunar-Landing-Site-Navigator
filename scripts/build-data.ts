@@ -4,6 +4,7 @@
 //   lroc_color_poles_4k.tif   NASA SVS CGI Moon Kit colour map (LRO Camera)
 //   ldem_16_uint.tif          NASA SVS CGI Moon Kit elevation map (LRO LOLA), 16 px/degree
 //   ldem_80s_80m.img          PDS LOLA gridded south-pole elevation, 80 m/pixel, 80°S to the pole
+//   bluemarble-2048.png       NASA SVS Blue Marble mosaic of Earth (item 2915), cloud-free
 //
 // Run with: npm run data
 
@@ -135,7 +136,17 @@ async function southPole() {
   );
 }
 
+/** Earth as seen from the Moon is at most a few hundred pixels across, so a 1k map is plenty. */
+async function earthMap() {
+  const info = await sharp(`${RAW}/bluemarble-2048.png`)
+    .resize(1024, 512, { kernel: 'lanczos3' })
+    .jpeg({ quality: 84, mozjpeg: true })
+    .toFile(`${OUT}/earth-1k.jpg`);
+  console.log(`earth-1k.jpg ${info.width}x${info.height} ${(info.size / 1e6).toFixed(2)} MB`);
+}
+
 const only = process.argv[2];
+if (!only || only === 'earth') await earthMap();
 if (!only || only === 'colour') await colourMap();
 if (!only || only === 'normal') await normalMap();
 if (!only || only === 'pole') await southPole();

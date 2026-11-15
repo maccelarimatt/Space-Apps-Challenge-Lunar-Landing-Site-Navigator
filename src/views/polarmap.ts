@@ -3,7 +3,7 @@
 
 import { MOON_RADIUS_KM, localAxes, type LatLon, type Vec3 } from '../astro/frame';
 import { SOUTH_POLE_GRID, demLatLon, demPixel } from '../astro/horizon';
-import { catalogueNo, siteKey, type Site } from '../sites';
+import { catalogueNo, siteKey, siteTitle, type Site } from '../sites';
 
 const N = SOUTH_POLE_GRID.size;
 const MPP = SOUTH_POLE_GRID.metresPerPixel;
@@ -272,7 +272,7 @@ export function createPolarMap(host: HTMLElement, opts: MapOptions): MapApi {
           pinEls.set(key, el);
         }
         el.querySelector('b')!.textContent = catalogueNo(site);
-        el.setAttribute('aria-label', `${catalogueNo(site)} ${site.name}`);
+        el.setAttribute('aria-label', siteTitle(site));
         el.title = site.name;
         el.classList.toggle('on', key === siteKey(sel));
       }

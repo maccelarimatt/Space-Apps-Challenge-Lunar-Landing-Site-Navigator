@@ -91,3 +91,21 @@ describe('discFractionAbove', () => {
     expect(discFractionAbove(0.135, 0.27)).toBeGreaterThan(0.5);
   });
 });
+
+describe('Earth orientation for the sky view', () => {
+  // An independent route: stand on Earth at the point the drawing code says is
+  // beneath the Moon, and ask the library how high the Moon is there. It should be overhead.
+  // One degree is allowed: Earth is drawn about a hundred pixels wide at most, so that is under a pixel.
+  it('puts the Moon overhead at the sub-lunar point', async () => {
+    const { Body, Equator, Horizon, Observer } = await import('astronomy-engine');
+    const { subLunarPoint } = await import('../src/astro/frame');
+    for (const iso of ['2026-11-15T07:00:00Z', '2027-03-14T06:00:00Z', '2027-08-02T19:30:00Z', '2030-01-20T12:00:00Z']) {
+      const t = Date.parse(iso);
+      const p = subLunarPoint(t);
+      const observer = new Observer(p.lat, p.lon, 0);
+      const eq = Equator(Body.Moon, new Date(t), observer, true, true);
+      const hor = Horizon(new Date(t), observer, eq.ra, eq.dec);
+      expect(hor.altitude).toBeGreaterThan(89);
+    }
+  });
+});

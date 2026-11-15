@@ -51,25 +51,55 @@ const cross = (a: Vec3, b: Vec3): Vec3 => [
   a[0] * b[1] - a[1] * b[0],
 ];
 
-/** Sun and Earth vectors in the Moon-fixed frame (x through 0°N 0°E, z through the north pole). */
-export function moonState(timeMs: number): MoonState {
-  const time = MakeTime(new Date(timeMs));
-  const moon = GeoMoon(time);
-  const sun = GeoVector(Body.Sun, time, true);
-  const axis = RotationAxis(Body.Moon, time);
-
+/**
+ * A body's own axes in J2000 equatorial coordinates, from its IAU rotation model:
+ * x through 0°N 0°E, y through 0°N 90°E, z through the north pole.
+ */
+function bodyAxes(body: Body, time: ReturnType<typeof MakeTime>): { x: Vec3; y: Vec3; z: Vec3 } {
+  const axis = RotationAxis(body, time);
   const ra = axis.ra * 15 * D2R;
   const dec = axis.dec * D2R;
   const spin = axis.spin * D2R;
-
-  // Body axes expressed in J2000 equatorial coordinates.
   const north: Vec3 = [Math.cos(dec) * Math.cos(ra), Math.cos(dec) * Math.sin(ra), Math.sin(dec)];
   const node: Vec3 = [-Math.sin(ra), Math.cos(ra), 0];
   const m = cross(north, node);
   const cs = Math.cos(spin);
   const sn = Math.sin(spin);
-  const xAxis: Vec3 = [cs * node[0] + sn * m[0], cs * node[1] + sn * m[1], cs * node[2] + sn * m[2]];
-  const yAxis = cross(north, xAxis);
+  const x: Vec3 = [cs * node[0] + sn * m[0], cs * node[1] + sn * m[1], cs * node[2] + sn * m[2]];
+  return { x, y: cross(north, x), z: north };
+}
+
+/**
+ * Which way Earth is turned, as seen from a site on the Moon: Earth's own axes
+ * (x through 0°N 0°E, y through 0°N 90°E, z through its north pole) given as
+ * [east, north, up] components at the site. Used to draw Earth's real face.
+ */
+export function earthAxesAtSite(timeMs: number, site: LatLon): { x: Vec3; y: Vec3; z: Vec3 } {
+  const time = MakeTime(new Date(timeMs));
+  const moon = bodyAxes(Body.Moon, time);
+  const earth = bodyAxes(Body.Earth, time);
+  const { east, north, up } = localAxes(site);
+  const local = (v: Vec3): Vec3 => {
+    const fixed: Vec3 = [dot(v, moon.x), dot(v, moon.y), dot(v, moon.z)];
+    return [dot(fixed, east), dot(fixed, north), dot(fixed, up)];
+  };
+  return { x: local(earth.x), y: local(earth.y), z: local(earth.z) };
+}
+
+/** The point on Earth directly beneath the Moon. Checks the Earth orientation used for drawing. */
+export function subLunarPoint(timeMs: number): LatLon {
+  const time = MakeTime(new Date(timeMs));
+  const moon = GeoMoon(time);
+  const earth = bodyAxes(Body.Earth, time);
+  return subPoint([dot([moon.x, moon.y, moon.z], earth.x), dot([moon.x, moon.y, moon.z], earth.y), dot([moon.x, moon.y, moon.z], earth.z)]);
+}
+
+/** Sun and Earth vectors in the Moon-fixed frame (x through 0°N 0°E, z through the north pole). */
+export function moonState(timeMs: number): MoonState {
+  const time = MakeTime(new Date(timeMs));
+  const moon = GeoMoon(time);
+  const sun = GeoVector(Body.Sun, time, true);
+  const { x: xAxis, y: yAxis, z: north } = bodyAxes(Body.Moon, time);
 
   const toFixed = (v: Vec3): Vec3 => [dot(v, xAxis) * AU_KM, dot(v, yAxis) * AU_KM, dot(v, north) * AU_KM];
 
