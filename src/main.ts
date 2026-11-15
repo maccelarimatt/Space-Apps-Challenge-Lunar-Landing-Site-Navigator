@@ -476,9 +476,12 @@ function renderPicker() {
       <span class="vh">${on ? 'In the comparison' : 'Not in the comparison'}. Sun ${fillWord(v.sun.fraction)}, Earth ${fillWord(v.earth.fraction)}.</span>
     </button></li>`;
   };
+  // Redrawing replaces the tiles, so keep keyboard focus on the one that had it.
+  const focused = (document.activeElement as HTMLElement | null)?.closest<HTMLElement>('#picker .pick')?.dataset.key;
   $('picker').innerHTML = groups.length
     ? groups.map(([title, list]) => `<h3>${title}</h3><ul class="pick-grid">${list.map(tile).join('')}</ul>`).join('')
     : '<p class="empty">No sites match the filters.</p>';
+  if (focused) $('picker').querySelector<HTMLElement>(`.pick[data-key="${focused}"]`)?.focus({ preventScroll: true });
   const shown = groups.flatMap(([, l]) => l);
   ($('pick-all') as HTMLButtonElement).disabled = shown.every((s) => atLanding(s) >= 0);
   ($('pick-none') as HTMLButtonElement).disabled = !shown.some((s) => atLanding(s) >= 0);
@@ -503,6 +506,7 @@ $('pick-all').addEventListener('click', () => {
     .flatMap(([, l]) => l)
     .filter((s) => atLanding(s) < 0);
   const room = MAX_SCENARIOS - state.compare.length;
+  add.slice(0, room).forEach((_, k) => fresh.add(state.compare.length + k));
   state.compare = [...state.compare, ...add.slice(0, room).map((site) => ({ site, timeMs: state.timeMs }))];
   statusText =
     add.length > room ? `Added ${room}. Compare holds ${MAX_SCENARIOS} scenarios, so ${add.length - room} were left out.` : `Added ${add.length} sites.`;
@@ -525,11 +529,18 @@ function renderFilterCount(shown: number, total: number) {
   $('f-more-count').textContent = extra ? `${extra} on` : '';
 }
 
+/** Scenarios added since the table was last drawn, by index in state.compare. */
+const fresh = new Set<number>();
+/** Wide screens show the table beside the sites, so a new row can be scrolled to without losing the list. */
+const sideBySide = matchMedia('(min-width: 1180px)');
+
 function renderCompare() {
   const body = $('cmp-body');
+  const added = new Set(fresh);
+  fresh.clear();
   if (!state.compare.length) {
     renderFilterCount(0, 0);
-    body.innerHTML = `<p class="empty">Nothing to compare yet. Pick sites above, or use <b>Add to compare</b> on the Choose site and Analyse tabs.</p>`;
+    body.innerHTML = `<p class="empty">Nothing to compare yet. Tick sites in the <b>Sites</b> list, or use <b>Add to compare</b> on the Choose site and Analyse tabs.</p>`;
     return;
   }
   const all = state.compare.map((sc, i) => {
@@ -558,9 +569,9 @@ function renderCompare() {
     </tr></thead>
     <tbody>${rows
       .map(
-        ({ sc, sum, i }) => `<tr>
+        ({ sc, sum, i }) => `<tr${added.has(i) ? ' class="fresh"' : ''}>
         <th scope="row"><button type="button" class="cmp-open" data-open="${i}"><span class="no">${sc.site.group === 'custom' ? '' : catalogueNo(sc.site)}</span>${esc(sc.site.name)}<span class="ll">${coords(sc.site)}</span></button></th>
-        <td>${dateTimeUTC(sc.timeMs).replace(' UTC', '')}</td>
+        <td class="when-cell">${dateTimeUTC(sc.timeMs).replace(' UTC', '').replace(', ', '<span class="sub">')}</span></td>
         <td class="lanes-col"><div class="cmp-lanes" data-row="${i}"></div></td>
         <td class="num${col === 'sun' ? ' sorted' : ''}">${percent(sum.sun)}${hrs(sum.sun)}</td><td class="num${col === 'earth' ? ' sorted' : ''}">${percent(sum.earth)}${hrs(sum.earth)}</td>
         <td class="num${sum.both === best && rows.length > 1 ? ' best' : ''}${col === 'both' ? ' sorted' : ''}">${percent(sum.both)}${sum.both === best && rows.length > 1 ? '<span class="tag">most</span>' : hrs(sum.both)}</td>
@@ -581,6 +592,10 @@ function renderCompare() {
   });
   const ticks = state.spanDays <= 14 ? [0, 0.25, 0.5, 0.75, 1] : [0, 0.5, 1];
   $('cmp-axis').innerHTML = ticks.map((t) => `<i style="left:${t * 100}%">${Math.round(t * state.spanDays)}</i>`).join('');
+
+  // Bring a just-added row into view. On a phone the table sits above the list, so leave the scroll alone there.
+  const first = body.querySelector('tr.fresh');
+  if (first && sideBySide.matches) first.scrollIntoView({ block: 'nearest' });
 }
 
 // --- About -------------------------------------------------------------------
@@ -876,6 +891,7 @@ function addScenario(site = state.site) {
   if (dup) statusText = `${name} on that date is already in Compare. Change the date to add it again.`;
   else if (state.compare.length >= MAX_SCENARIOS) statusText = `Compare holds ${MAX_SCENARIOS} scenarios. Remove one first.`;
   else {
+    fresh.add(state.compare.length);
     state.compare = [...state.compare, { site, timeMs: state.timeMs }];
     statusText = `Added ${site.no ? name : 'the custom site'} on ${dateUTC(state.timeMs)} to Compare.`;
   }

@@ -281,6 +281,8 @@ On Compare, the common filters sit in one row under a Rule: segmented toggles fo
 ### Site picker
 Compare picks several sites at once, so it does not reuse the single-choice site list. Sites are set as a grid of catalogue tiles (232px minimum, 8px apart, two to a row on a phone), grouped under small-caps headings: My sites, South pole, Elsewhere, and any unsaved pin. Each tile holds the catalogue number, the name, the coordinates and the three-block status strip, with a drawn check box at the top right. Pressed means "in the comparison at the landing date": white border, Lifted Black fill and a solid white box with a black tick. "Add all shown" and "Remove all shown" act on whatever the filters leave visible.
 
+From 1180px wide the picker becomes a 320px column to the right of the table, 32px apart, so a pick and its row are seen together. The column is sticky, scrolls on its own, and its tiles drop to two lines (number and name, then coordinates and status strip). A row just added is lit Lifted Black and fades back over 1.8s (held still under reduced motion), and the table scrolls just far enough to show it. Below 1180px the table comes first and the tile grid follows it.
+
 ### Inputs / Fields
 - **Style:** Matte Black fill, 1px Control Hairline border, square, 6px 8px padding, 13px text. Border brightens to white on hover.
 - **Label:** a 12px Secondary Grey label stacked 3px above the field. Units sit after the field in white.

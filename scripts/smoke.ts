@@ -135,6 +135,7 @@ check('the URL restores the scenario', (await again.$$('.cmp tbody tr')).length 
 
 // With no date in the address, the app opens on the present and keeps the date out of the link.
 const fresh = await browser.newPage();
+await fresh.setViewport({ width: 1440, height: 900 });
 await fresh.goto(base, { waitUntil: 'networkidle0' });
 await wait(1500);
 const shown = await fresh.$eval('#date', (el) => (el as HTMLInputElement).value);
@@ -154,6 +155,14 @@ await fresh.click('.pick[data-key="-85.9902,2.0920"]');
 await wait(800);
 check('on Compare, picking a site adds a scenario', (await fresh.$$('.cmp tbody tr')).length === 1, await fresh.$eval('#cmp-status', (el) => el.textContent ?? ''));
 check('the picked tile shows as in', (await fresh.$eval('.pick[data-key="-85.9902,2.0920"]', (el) => el.getAttribute('aria-pressed'))) === 'true');
+check('the new row is marked as just added', (await fresh.$$('.cmp tbody tr.fresh')).length === 1);
+check('keyboard focus stays on the picked tile', await fresh.evaluate(() => document.activeElement?.getAttribute('data-key') === '-85.9902,2.0920'));
+const sideBySide = await fresh.evaluate(() => {
+  const t = document.querySelector('.cmp-results')!.getBoundingClientRect();
+  const s = document.querySelector('.cmp-work > .picker')!.getBoundingClientRect();
+  return s.left >= t.right && s.top < innerHeight && t.top < innerHeight;
+});
+check('on a wide screen the table and the sites sit side by side', sideBySide);
 await fresh.click('.pick[data-key="-85.9902,2.0920"]');
 await wait(600);
 check('picking it again takes it out', (await fresh.$$('.cmp tbody tr')).length === 0);

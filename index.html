@@ -179,19 +179,7 @@
             <p class="filter-count"><span id="f-count" role="status"></span> <button type="button" id="f-clear" hidden>Clear filters</button></p>
           </form>
 
-          <section class="picker" aria-labelledby="picker-h">
-            <div class="picker-head">
-              <h2 id="picker-h">Sites</h2>
-              <p id="picker-when"></p>
-              <div class="picker-actions">
-                <button type="button" id="pick-all">Add all shown</button>
-                <button type="button" id="pick-none">Remove all shown</button>
-              </div>
-            </div>
-            <div id="picker"></div>
-            <p class="status" id="cmp-status" role="status"></p>
-          </section>
-
+          <div class="cmp-work">
           <section class="cmp-results" aria-labelledby="cmp-h">
             <div class="picker-head">
               <h2 id="cmp-h">Side by side</h2>
@@ -210,6 +198,20 @@
             </div>
             <div class="cmp-scroll" id="cmp-body"></div>
           </section>
+
+          <section class="picker" aria-labelledby="picker-h">
+            <div class="picker-head">
+              <h2 id="picker-h">Sites</h2>
+              <p id="picker-when"></p>
+              <div class="picker-actions">
+                <button type="button" id="pick-all">Add all shown</button>
+                <button type="button" id="pick-none">Remove all shown</button>
+              </div>
+            </div>
+            <p class="status" id="cmp-status" role="status"></p>
+            <div id="picker"></div>
+          </section>
+          </div>
         </section>
 
         <section class="about" data-for="about" aria-label="About Selene’s Compass" id="about"></section>

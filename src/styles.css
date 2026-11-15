@@ -475,7 +475,7 @@ main:focus {
 
 /* Compare filters: the common ones in one row, the rest folded beneath. */
 
-/* Compare: filters as toggles and sliders, then the picker, then the table. */
+/* Compare: filters as toggles and sliders, then the table and the site picker. */
 
 .filters {
   margin-top: 22px;
@@ -585,6 +585,99 @@ main:focus {
 .picker,
 .cmp-results {
   margin-top: 26px;
+}
+
+/* On a wide screen the table and the sites sit side by side, so a pick shows its row at once.
+   The sites column stays in view while the table scrolls. */
+@media (min-width: 1180px) {
+  .cmp-work {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    align-items: start;
+    gap: 0 32px;
+    margin-top: 26px;
+  }
+
+  .cmp-work > .picker,
+  .cmp-work > .cmp-results {
+    margin-top: 0;
+  }
+
+  .cmp-work > .picker {
+    position: sticky;
+    top: 0;
+    /* Short enough to fit between the top bar and the page's bottom padding, so at the end of
+       the page the column is not pushed up under the bar. */
+    max-height: calc(100dvh - 180px);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cmp-work .picker-actions {
+    flex: 1 0 100%;
+    margin-left: 0;
+  }
+
+  .cmp-work #picker {
+    min-height: 0;
+    overflow-y: auto;
+    padding: 0 6px 12px 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line) transparent;
+  }
+
+  .cmp-work .pick-grid {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  /* Two lines a tile in the column: number and name, then place and status blocks. */
+  .cmp-work .pick {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'no nm tick'
+      'll ll code';
+    align-items: baseline;
+    gap: 3px 8px;
+    padding: 8px 12px;
+  }
+
+  .cmp-work .pick-tick,
+  .cmp-work .pick .code {
+    align-self: center;
+  }
+
+  .cmp-work #cmp-status {
+    order: 0;
+    margin: 8px 0 0;
+  }
+
+  .cmp-work #cmp-status:empty {
+    display: none;
+  }
+}
+
+/* A row just added from the sites list is lit for a moment so the eye finds it. */
+.cmp tbody tr.fresh {
+  animation: fresh 1.8s var(--out);
+}
+
+@keyframes fresh {
+  from {
+    background: #262626;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cmp tbody tr.fresh {
+    animation: none;
+    background: var(--lift);
+  }
+}
+
+/* No gap left by the filter count while there is nothing to count. */
+.filter-count:has(#f-count:empty):has(#f-clear[hidden]) {
+  display: none;
 }
 
 .picker-head {
@@ -763,6 +856,11 @@ main:focus {
   color: var(--ink);
   text-decoration: underline;
   text-underline-offset: 4px;
+}
+
+/* Landing date over its time, so the column never breaks mid-date. */
+.cmp .when-cell {
+  white-space: nowrap;
 }
 
 .cmp td.sorted {
